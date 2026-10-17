@@ -51,3 +51,9 @@ if len(sys.argv)>2 and sys.argv[2]=='--subclasses':
             k=structs.get(k,(None,))[0]; seen+=1
         return False
     print(sorted(k for k in structs if isa(k)))
+
+if len(sys.argv)>2 and sys.argv[2]=='--uses':
+    t=sys.argv[3]
+    for k,(sup,props) in structs.items():
+        for p in props:
+            if t in p[1]: print(k, ':', p[0], p[1])

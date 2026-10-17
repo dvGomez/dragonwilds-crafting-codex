@@ -160,4 +160,35 @@ local function write()
     f:close()
 end
 
-return { tick = write }
+-- World capture (backup of a world hosted elsewhere): runs every CAPTURE_EVERY seconds while the
+-- flag file capture\ON exists. capture.lua is re-read each time so it can be updated live.
+local CAPTURE_DIR = (os.getenv("LOCALAPPDATA") or ".") .. "/RSDragonwilds/Saved/CraftCodex/capture/"
+local CAPTURE_EVERY = 60
+local lastCapture = 0
+local function maybeCapture()
+    if os.time() - lastCapture < CAPTURE_EVERY then return end
+    lastCapture = os.time()
+    local flag = io.open(CAPTURE_DIR .. "ON", "r")
+    if not flag then return end
+    flag:close()
+    local path = package.searchpath and package.searchpath("capture", package.path)
+    if not path then print("[CraftCodex] capture.lua not found in package.path\n") return end
+    local ok, err = pcall(function() dofile(path).run(function(...) end) end)
+    if not ok then print("[CraftCodex] capture failed: " .. tostring(err) .. "\n") end
+end
+
+-- World restore (refill containers of a rebuilt world), see restore.lua
+local lastRestoreTry = 0
+local function maybeRestore()
+    if os.time() - lastRestoreTry < 5 then return end
+    lastRestoreTry = os.time()
+    local plan = io.open((os.getenv("LOCALAPPDATA") or ".") .. "/RSDragonwilds/Saved/CraftCodex/restore/plan.lua", "r")
+    if not plan then return end
+    plan:close()
+    local path = package.searchpath and package.searchpath("restore", package.path)
+    if not path then return end
+    local ok, err = pcall(function() dofile(path).tryRun() end)
+    if not ok then print("[CraftCodex] restore failed: " .. tostring(err) .. "\n") end
+end
+
+return { tick = function() write(); maybeCapture(); maybeRestore() end }
