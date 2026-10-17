@@ -1,0 +1,19 @@
+# Generated from the user's own game install by Instalar.cmd (Jagex assets: never commit)
+data/
+app/data/
+app/ui/assets/*
+!app/ui/assets/.gitkeep
+
+# Tooling / build output
+.dotnet/
+extractor/bin/
+extractor/obj/
+app/node_modules/
+tools/dev/__pycache__/
+
+# Local state
+config.local.json
+mod/CraftCodex/scripts/probe.lua
+mod/CraftCodex/scripts/probe_out.txt
+.claude/
+*.log
