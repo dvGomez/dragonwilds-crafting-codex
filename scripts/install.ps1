@@ -72,6 +72,8 @@ $paks = Join-Path $GamePath 'RSDragonwilds\Content\Paks'
 if ((Invoke-Native $dotnet @($exe, $paks, $usmap, $extract, 'dump')) -ne 0) { throw "Falha na extração dos dados." }
 $uiArgs = @($exe, $paks, $usmap, $extract, 'ui', 'Content/Art/UI/Common/', 'Content/Art/UI/Craft/', 'Content/Art/UI/MainMenu/', 'Content/UI/Fonts/BonaNova', 'Content/UI/Fonts/NotoSans-')
 if ((Invoke-Native $dotnet $uiArgs) -ne 0) { throw "Falha ao extrair a interface." }
+Write-Info "Mapeando de onde vem cada item (minérios, árvores, criaturas, baús, pesca)..."
+if ((Invoke-Native $dotnet @($exe, $paks, $usmap, $extract, 'refs')) -ne 0) { throw "Falha ao mapear as fontes dos itens." }
 if ((Invoke-Native 'node' @((Join-Path $RepoRoot 'tools\build_db.js')) -Show) -ne 0) { throw "Falha ao montar a base de dados." }
 Invoke-Native $dotnet @('build-server', 'shutdown') | Out-Null  # não deixa processos do compilador prendendo a pasta
 Write-Ok "Base de dados pronta"

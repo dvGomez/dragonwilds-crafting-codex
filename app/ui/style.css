@@ -219,3 +219,24 @@ h2 { margin: 2px 0 10px; font: 400 17px "BonaNova", serif; color: var(--gold); l
   .panel { overflow: visible; }
   .frame { border-width: 58px 12px 20px 12px; }
 }
+
+/* ------------------------------------------------------------------ how to get / used in */
+.howto { padding: 6px 18px 4px; border-bottom: 1px solid var(--line); }
+.howto:empty { display: none; }
+.howto-head { background: none; border: 0; padding: 6px 0; color: var(--gold); font: 16px "BonaNova", serif; letter-spacing: 0.05em; }
+.howto-head:hover { color: var(--gold-2); }
+.howto-body { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 10px; }
+.howto-group { display: grid; grid-template-columns: 118px 1fr; gap: 10px; align-items: start; }
+.howto-kind { color: #cdb98a; font-size: 13px; padding-top: 3px; white-space: nowrap; }
+.howto-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.howto-chip { background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); border-radius: 3px; padding: 3px 8px; font-size: 12px; line-height: 1.35; }
+.howto-chip b { font-weight: 600; color: var(--text); }
+.used-chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); border-radius: 3px; padding: 2px 8px 2px 2px; font-size: 12px; cursor: pointer; }
+.used-chip:hover { border-color: var(--gold-dim); color: var(--gold-2); }
+.slot.xs { --slot: 24px; }
+.slot.xs .mono { font-size: 9px; }
+.link-btn { background: none; border: 1px dashed var(--line-2); color: var(--gold); border-radius: 3px; padding: 2px 8px; font-size: 12px; }
+.src-hint { flex-basis: 100%; color: #b9ab8c; font-size: 12px; }
+.mat-src { color: var(--muted); font-size: 11px; line-height: 1.25; margin-top: 1px; }
+.tt-src { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 700px) { .howto-group { grid-template-columns: 1fr; gap: 4px; } }

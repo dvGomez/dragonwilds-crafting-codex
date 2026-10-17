@@ -42,7 +42,7 @@ for (const r of Object.values(db.recipes)) {
 const items = {};
 for (const id of keep) {
   const it = db.items[id];
-  items[id] = { ...it, recipes: (it.recipes || []).filter(r => recipes[r]) };
+  items[id] = { ...it, recipes: (it.recipes || []).filter(r => recipes[r]), used: (it.used || []).filter(u => keep.has(u)) };
 }
 const usedStations = new Set(Object.values(recipes).flatMap(r => r.stations));
 const stations = Object.fromEntries(Object.entries(db.stations).filter(([k]) => usedStations.has(k)).map(([k, v]) => [k, { ...v }]));

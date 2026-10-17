@@ -211,6 +211,24 @@ for (const a of piecesRaw) {
   if (act && items[a.Package] && !(cls in actorToItem)) actorToItem[cls] = a.Package;
 }
 
+// where each item comes from (nodes, drops, chests, fishing, farming, quests) - needs the extractor "refs" pass
+const refsFile = path.join(SRC, 'refs.json');
+if (fs.existsSync(refsFile)) {
+  const { buildSources } = require('./sources');
+  const sources = buildSources({ refs: JSON.parse(fs.readFileSync(refsFile, 'utf8')), text, items, locres });
+  for (const [id, list] of Object.entries(sources)) if (items[id]) items[id].src = list;
+}
+// reverse index: what each item is used to make
+for (const r of Object.values(recipes)) {
+  if (r.junk) continue;
+  for (const i of r.in) {
+    const it = items[i.item];
+    if (!it) continue;
+    const used = (it.used ||= []);
+    for (const o of r.out) if (!used.includes(o.item) && used.length < 60) used.push(o.item);
+  }
+}
+
 const guidToItem = {};
 for (const [k, v] of Object.entries(items)) if (v.guid) guidToItem[v.guid] = k;
 

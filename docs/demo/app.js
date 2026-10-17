@@ -6,6 +6,7 @@ const I18N = {
     title: 'Códex de Criação', searchPh: 'Buscar item (português ou inglês)...', tabCraft: 'Criação', tabInv: 'Inventário',
     emptyTitle: 'Busque qualquer item do jogo', emptySub: 'Em português ou inglês. Mostro a árvore inteira de criação, quantidades e o que você já tem.',
     missingTitle: 'Falta coletar', stepsTitle: 'Etapas de criação', sourcesTitle: 'Considerar itens de', filterPh: 'Filtrar...',
+    howTo: 'Como obter', usedIn: 'Usado em', noSources: 'Sem fonte conhecida (pode vir de eventos, NPCs ou recompensas especiais).',
     live: 'Sessão ao vivo', demo: 'Demonstração · inventário de exemplo',
     srcNoteDemo: 'Demonstração com alguns itens e um inventário fictício. Instale o Códex para usar todos os itens do jogo com o seu inventário de verdade.', liveNoPlayer: 'Jogo aberto (no menu)', saveMode: 'Save', ago: 'há', noData: 'Nenhum dado do jogo encontrado',
     have: 'tem', need: 'precisa', missing: 'faltam', craft: 'criar', crafts: 'criações', ready: 'Você já tem tudo para criar!',
@@ -25,6 +26,7 @@ const I18N = {
     title: 'Crafting Codex', searchPh: 'Search item (English or Portuguese)...', tabCraft: 'Crafting', tabInv: 'Inventory',
     emptyTitle: 'Search any item in the game', emptySub: 'In English or Portuguese. Shows the whole crafting tree, quantities and what you already have.',
     missingTitle: 'Still to gather', stepsTitle: 'Crafting steps', sourcesTitle: 'Count items from', filterPh: 'Filter...',
+    howTo: 'How to get', usedIn: 'Used in', noSources: 'No known source (may come from events, NPCs or special rewards).',
     live: 'Live session', demo: 'Demo · sample inventory',
     srcNoteDemo: 'Demo with a few items and a made-up inventory. Install the Codex to use every item in the game with your real inventory.', liveNoPlayer: 'Game open (in menu)', saveMode: 'Save', ago: '', noData: 'No game data found',
     have: 'have', need: 'need', missing: 'missing', craft: 'craft', crafts: 'crafts', ready: 'You have everything to craft it!',
@@ -53,7 +55,8 @@ const S = {
   lang: LS.get('lang', 'pt'),
   target: LS.get('target', null),
   qty: LS.get('qty', 1),
-  choice: LS.get('choice', {}),          // itemId -> recipeId | 'gather'
+  choice: LS.get('choice', {}),
+  howtoOpen: LS.get('howtoOpen', true),          // itemId -> recipeId | 'gather'
   kindsOff: new Set(LS.get('kindsOff', ['world'])),
   closed: new Set(),
   pool: new Map(),
@@ -90,6 +93,80 @@ function stationLabel(sid) {
 function typeLabel(item) {
   if (item.type === 'Building' && /Decoration/i.test(item.id)) return S.lang === 'pt' ? 'Decoração' : 'Decoration';
   return t('types')[item.type] || '';
+}
+
+// ------------------------------------------------------------------ how to get (sources) / used in
+const SRC_KIND = {
+  craft: { i: '⚒', pt: 'Criar', en: 'Craft' },
+  vendor: { i: '🪙', pt: 'Comprar', en: 'Buy' },
+  mine: { i: '⛏', pt: 'Minerar', en: 'Mine' },
+  tree: { i: '🪓', pt: 'Cortar', en: 'Chop' },
+  gather: { i: '🌿', pt: 'Coletar', en: 'Gather' },
+  break: { i: '🔨', pt: 'Quebrar', en: 'Break' },
+  salvage: { i: '🏺', pt: 'Escavar', en: 'Salvage' },
+  farm: { i: '🌱', pt: 'Plantar', en: 'Farm' },
+  fish: { i: '🎣', pt: 'Pescar', en: 'Fish' },
+  drop: { i: '⚔', pt: 'Derrotar', en: 'Defeat' },
+  chest: { i: '🧰', pt: 'Baús', en: 'Chests' },
+  agility: { i: '🏅', pt: 'Agilidade', en: 'Agility' },
+  quest: { i: '📜', pt: 'Missões', en: 'Quests' },
+};
+const kindLabel = (k) => SRC_KIND[k] ? `${SRC_KIND[k].i} ${SRC_KIND[k][S.lang]}` : k;
+function srcDetail(s) {
+  const parts = [];
+  if (s.min != null) parts.push(s.max != null ? `${s.min}–${s.max}` : `${s.min}`);
+  if (s.p != null) parts.push(`${s.p < 0.01 ? '<1' : Math.round(s.p * 100)}%`);
+  return parts.join(' · ');
+}
+// All ways to get an item, grouped by kind: crafting, vendors, then world sources.
+function howToGet(item) {
+  const groups = [];
+  const rec = (item.recipes || []).map(r => S.db.recipes[r]);
+  const crafts = rec.filter(r => !isVendorOnly(r));
+  const buys = rec.filter(r => isVendorOnly(r));
+  const ing = (r) => r.in.map(x => `${x.n} ${nm(S.db.items[x.item])}`).join(', ');
+  const stName = (r) => r.stations[0] ? (S.db.stations[r.stations[0]]?.name[S.lang] || '') : '';
+  if (crafts.length) groups.push({ k: 'craft', list: crafts.map(r => ({ name: stName(r) || t('build'), detail: ing(r) })) });
+  if (buys.length) groups.push({ k: 'vendor', list: buys.map(r => ({ name: stName(r), detail: ing(r) })) });
+  for (const s of item.src || []) {
+    let g = groups.find(x => x.k === s.k);
+    if (!g) groups.push(g = { k: s.k, list: [] });
+    g.list.push({ name: s.from[S.lang] || s.from.en, detail: srcDetail(s) });
+  }
+  return groups;
+}
+// One-line hint for raw materials: "⛏ Rochedo (10–16)"
+function srcHint(item, max = 2) {
+  const list = (item.src || []).slice(0, max);
+  if (!list.length) {
+    const buy = (item.recipes || []).map(r => S.db.recipes[r]).find(isVendorOnly);
+    return buy ? `${SRC_KIND.vendor.i} ${S.db.stations[buy.stations[0]]?.name[S.lang] || ''}` : '';
+  }
+  return list.map(s => `${SRC_KIND[s.k]?.i || ''} ${s.from[S.lang] || s.from.en}${s.min != null || s.p != null ? ` (${srcDetail(s)})` : ''}`).join(' · ');
+}
+
+function renderHowTo(item) {
+  const el = $('#howto');
+  if (!el) return;
+  const groups = howToGet(item);
+  const used = (item.used || []).filter(id => S.db.items[id]);
+  const open = S.howtoOpen ?? true;
+  const rows = groups.map(g => `
+    <div class="howto-group">
+      <div class="howto-kind">${esc(kindLabel(g.k))}</div>
+      <div class="howto-list">${g.list.slice(0, S.howtoAll ? 99 : 6).map(x =>
+        `<span class="howto-chip"><b>${esc(x.name)}</b>${x.detail ? ` <span class="muted">${esc(x.detail)}</span>` : ''}</span>`).join('')}
+        ${g.list.length > 6 && !S.howtoAll ? `<button class="link-btn" data-howto-all>+${g.list.length - 6}</button>` : ''}</div>
+    </div>`).join('');
+  const usedHtml = used.length ? `
+    <div class="howto-group">
+      <div class="howto-kind">🔁 ${esc(t('usedIn'))} <span class="muted">(${used.length}${used.length >= 60 ? '+' : ''})</span></div>
+      <div class="howto-list used">${used.slice(0, S.usedAll ? 60 : 14).map(id => `<span class="used-chip" data-goto="${esc(id)}">${slot(S.db.items[id], 'xs')}${esc(nm(S.db.items[id]))}</span>`).join('')}
+        ${used.length > 14 && !S.usedAll ? `<button class="link-btn" data-used-all>+${used.length - 14}</button>` : ''}</div>
+    </div>` : '';
+  el.innerHTML = `
+    <button class="howto-head" data-howto-toggle>${open ? '▾' : '▸'} ${esc(t('howTo'))}</button>
+    ${open ? `<div class="howto-body">${rows || `<div class="empty-note">${esc(t('noSources'))}</div>`}${usedHtml}</div>` : ''}`;
 }
 
 // ------------------------------------------------------------------ inventory pool
@@ -210,6 +287,7 @@ function renderCraft() {
     targetEl.className = 'target empty';
     targetEl.innerHTML = `<div class="placeholder"><div class="placeholder-title">${esc(t('emptyTitle'))}</div><div class="placeholder-sub">${esc(t('emptySub'))}</div></div>`;
     $('#tree').innerHTML = '';
+    $('#howto').innerHTML = '';
     $('#missing').innerHTML = '';
     $('#steps').innerHTML = '';
     return;
@@ -232,12 +310,14 @@ function renderCraft() {
     <div class="qty-box">
       <button data-q="-1">−</button><input id="qty" type="number" min="1" value="${S.qty}"><button data-q="1">+</button>
     </div>`;
-  $('#tree').innerHTML = tree.recipe || tree.cycle ? renderNode(tree, true, '0') : `<div class="empty-note">${esc(S.lang === 'pt' ? 'Este item não é criado: só coletado, comprado ou encontrado.' : 'This item is not crafted: it is gathered, bought or found.')}</div>`;
+  renderHowTo(item);
+  $('#tree').innerHTML = tree.recipe || tree.cycle ? renderNode(tree, true, '0') : '';
 
   $('#missing').innerHTML = plan.gather.length
     ? plan.gather.map(g => {
       const it = S.db.items[g.id];
-      return `<div class="mat" data-goto="${esc(g.id)}">${slot(it, 'sm')}<div><div class="mat-name">${esc(nm(it))}</div><div class="mat-n">${fmt(g.n)}${g.have ? ` <span class="muted">(${esc(t('have'))} ${fmt(g.have)})</span>` : ''}</div></div></div>`;
+      const hint = srcHint(it, 1);
+      return `<div class="mat" data-goto="${esc(g.id)}">${slot(it, 'sm')}<div><div class="mat-name">${esc(nm(it))}</div><div class="mat-n">${fmt(g.n)}${g.have ? ` <span class="muted">(${esc(t('have'))} ${fmt(g.have)})</span>` : ''}</div>${hint ? `<div class="mat-src">${esc(hint)}</div>` : ''}</div></div>`;
     }).join('')
     : `<div class="empty-note">${esc(t('allCollected'))}</div>`;
 
@@ -277,6 +357,10 @@ function renderNode(n, isRoot, key) {
     meta += ` <select class="recipe-pick" data-item="${esc(n.id)}">${opts.join('')}</select>`;
   }
   if (n.cycle) meta += ` <span class="cycle">(${esc(t('cycle'))})</span>`;
+  if (!r && !isRoot) {
+    const hint = srcHint(item, 2);
+    if (hint) meta += `<span class="src-hint">${esc(hint)}</span>`;
+  }
 
   let haveTxt = '';
   let haveCls = 'none';
@@ -417,10 +501,11 @@ function renderResults() {
   resultSel = Math.min(resultSel, Math.max(0, list.length - 1));
   el.innerHTML = list.length ? list.map((it, i) => {
     const have = haveOf(it.id);
-    const st = it.recipes?.length ? S.db.recipes[it.recipes[0]].stations[0] : null;
+    const r0 = chosenRecipe(it.id);
+    const where = r0 ? (r0.stations[0] ? S.db.stations[r0.stations[0]]?.name[S.lang] || '' : '') : srcHint(it, 1);
     return `<div class="result ${i === resultSel ? 'sel' : ''}" data-id="${esc(it.id)}">
       ${slot(it, 'sm')}
-      <div class="names"><div class="n1">${esc(nm(it))}</div><div class="n2">${esc(alt(it))}${st ? ' · ' + esc(S.db.stations[st]?.name[S.lang] || '') : ''}</div></div>
+      <div class="names"><div class="n1">${esc(nm(it))}</div><div class="n2">${esc(alt(it))}${where ? ' · ' + esc(where) : ''}</div></div>
       ${have ? `<span class="badge have-badge">${esc(t('have'))} ${fmt(have)}</span>` : ''}
       ${typeLabel(it) ? `<span class="badge">${esc(typeLabel(it))}</span>` : ''}
     </div>`;
@@ -429,6 +514,8 @@ function renderResults() {
 
 function selectTarget(id) {
   S.target = id;
+  S.howtoAll = false;
+  S.usedAll = false;
   S.qty = 1;
   S.closed.clear();
   LS.set('target', id); LS.set('qty', 1);
@@ -454,7 +541,8 @@ function showTip(el, ev) {
   if (!it) { tip.hidden = true; return; }
   tip.innerHTML = `<div class="tt-name">${esc(nm(it))}</div><div class="tt-alt">${esc(alt(it))}${typeLabel(it) ? ' · ' + esc(typeLabel(it)) : ''}</div>
     ${it.desc ? `<div class="tt-desc">${esc(it.desc[S.lang] || it.desc.en)}</div>` : ''}
-    <div class="tt-have">${esc(t('youHave'))}: <b>${fmt(haveOf(it.id))}</b></div>`;
+    <div class="tt-have">${esc(t('youHave'))}: <b>${fmt(haveOf(it.id))}</b></div>
+    ${(it.src || []).length ? `<div class="tt-src">${(it.src || []).slice(0, 3).map(x => `<div>${esc(SRC_KIND[x.k]?.i || '')} ${esc(x.from[S.lang] || x.from.en)} <span class="muted">${esc(srcDetail(x))}</span></div>`).join('')}</div>` : ''}`;
   tip.hidden = false;
   const r = tip.getBoundingClientRect();
   let x = ev.clientX + 16, y = ev.clientY + 16;
@@ -531,6 +619,9 @@ document.addEventListener('click', (e) => {
   if (q) { S.qty = Math.max(1, S.qty + Number(q.dataset.q)); LS.set('qty', S.qty); return renderCraft(); }
   const tg = e.target.closest('.toggle:not(.leaf)');
   if (tg) { const k = tg.dataset.key; S.closed.has(k) ? S.closed.delete(k) : S.closed.add(k); return renderCraft(); }
+  if (e.target.closest('[data-howto-toggle]')) { S.howtoOpen = !(S.howtoOpen ?? true); LS.set('howtoOpen', S.howtoOpen); return renderHowTo(S.db.items[S.target]); }
+  if (e.target.closest('[data-howto-all]')) { S.howtoAll = true; return renderHowTo(S.db.items[S.target]); }
+  if (e.target.closest('[data-used-all]')) { S.usedAll = true; return renderHowTo(S.db.items[S.target]); }
   const go = e.target.closest('[data-goto]');
   if (go) return selectTarget(go.dataset.goto);
   const tab = e.target.closest('.tab');

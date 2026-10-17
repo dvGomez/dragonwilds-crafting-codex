@@ -1,8 +1,10 @@
 -- CraftCodex world restore: refills chests/stations of a rebuilt world from a capture.
--- Runs once when %LOCALAPPDATA%\RSDragonwilds\Saved\CraftCodex\restore\plan.lua exists and this
--- game is the host (authority). plan.lua is written by tools/restore_world.py and returns
+-- Active while %LOCALAPPDATA%\RSDragonwilds\Saved\CraftCodex\restore\plan.lua exists and this game is the
+-- host (authority). plan.lua is written by tools/restore_world.py and returns
 -- { containers = { { cls=, loc={x,y,z}, comp=, compName=, items={ {slot=,path=,count=,pct=}, ... } }, ... } }
--- Result goes to restore\report.txt and plan.lua is renamed to plan.done.lua.
+-- Building actors only spawn near the player, so each container is filled the first time it is found;
+-- progress is kept in restore\progress.txt and the result in restore\report.txt. When every container
+-- is done, plan.lua is renamed to plan.done.lua.
 local M = {}
 local DIR = (os.getenv("LOCALAPPDATA") or ".") .. "/RSDragonwilds/Saved/CraftCodex/restore/"
 
@@ -17,10 +19,10 @@ local function loadItemData(path, cache)
     return cache[path]
 end
 
-local function findActor(actors, cls, loc, used)
+local function findActor(actors, cls, loc)
     local best, bestD = nil, 200 * 200 -- within 2 m
     for _, a in ipairs(actors) do
-        if not used[a:GetAddress()] and a:GetClass():GetFName():ToString() == cls then
+        if valid(a) and a:GetClass():GetFName():ToString() == cls then
             local ok, L = pcall(function() return a:K2_GetActorLocation() end)
             if ok then
                 local d = (L.X - loc[1]) ^ 2 + (L.Y - loc[2]) ^ 2 + (L.Z - loc[3]) ^ 2
@@ -41,48 +43,63 @@ local function findComponent(actor, compClass, compName)
     return nil
 end
 
--- returns true when finished (successfully or not), false to retry later
+local function readLines(path)
+    local t, f = {}, io.open(path, "r")
+    if f then for l in f:lines() do t[#t + 1] = l end f:close() end
+    return t
+end
+
+local function appendLine(path, line)
+    local f = io.open(path, "a")
+    if f then f:write(line .. "\n") f:close() end
+end
+
 function M.tryRun()
     local planFile = DIR .. "plan.lua"
     local f = io.open(planFile, "r")
-    if not f then return true end
+    if not f then return end
     f:close()
 
     local gbm = (FindAllOf("GlobalBuildingManager") or {})[1]
-    if not valid(gbm) then return false end
+    if not valid(gbm) then return end
     local okAuth, auth = pcall(function() return gbm:HasAuthority() end)
-    if not okAuth or not auth then return false end -- only the host can restore
+    if not okAuth or not auth then return end -- only the host can restore
     local actors = FindAllOf("BaseBuildingActor") or {}
-    if #actors == 0 then return false end -- world still loading
+    if #actors == 0 then return end
 
     local plan = dofile(planFile)
-    local lines, cache, used = {}, {}, {}
-    local okC, okI, failI = 0, 0, 0
-    for _, c in ipairs(plan.containers) do
-        local actor = findActor(actors, c.cls, c.loc, used)
-        local comp = actor and findComponent(actor, c.comp, c.compName)
-        if not comp then
-            lines[#lines + 1] = string.format("MISSING %s %s at (%.0f, %.0f, %.0f)", c.cls, c.compName, c.loc[1], c.loc[2], c.loc[3])
-        else
-            pcall(function() comp:ClearInventory() end)
-            for _, it in ipairs(c.items) do
-                local data = loadItemData(it.path, cache)
-                local ok, res = false, false
-                if data then ok, res = pcall(function() return comp:AddItemByDataToSlot(data, it.slot, it.count, it.pct or 1.0, {}) end) end
-                if ok and res then okI = okI + 1 else
-                    failI = failI + 1
-                    lines[#lines + 1] = string.format("  item failed: %s x%d slot %d in %s", it.path, it.count, it.slot, c.cls)
+    local done = {}
+    for _, l in ipairs(readLines(DIR .. "progress.txt")) do done[tonumber(l)] = true end
+    local cache = {}
+    local remaining = 0
+    for i, c in ipairs(plan.containers) do
+        if not done[i] then
+            local actor = findActor(actors, c.cls, c.loc)
+            local comp = actor and findComponent(actor, c.comp, c.compName)
+            if not comp then
+                remaining = remaining + 1
+            else
+                pcall(function() comp:ClearInventory() end)
+                local okI, failI = 0, 0
+                for _, it in ipairs(c.items) do
+                    local data = loadItemData(it.path, cache)
+                    local ok, res = false, false
+                    if data then ok, res = pcall(function() return comp:AddItemByDataToSlot(data, it.slot, it.count, it.pct or 1.0, {}) end) end
+                    if ok and res then okI = okI + 1 else
+                        failI = failI + 1
+                        appendLine(DIR .. "report.txt", string.format("  item failed: %s x%d slot %d in %s (%s)", it.path, it.count, it.slot, c.cls, tostring(res)))
+                    end
                 end
+                appendLine(DIR .. "report.txt", string.format("filled %s %s: %d items ok, %d failed", c.cls, c.compName, okI, failI))
+                appendLine(DIR .. "progress.txt", tostring(i))
+                print(string.format("[CraftCodex] restored %s (%d items)\n", c.cls, okI))
             end
-            okC = okC + 1
         end
     end
-    table.insert(lines, 1, string.format("restored %d/%d containers, %d items ok, %d failed", okC, #plan.containers, okI, failI))
-    local r = io.open(DIR .. "report.txt", "w")
-    if r then r:write(table.concat(lines, "\n")) r:close() end
-    os.rename(planFile, DIR .. "plan.done.lua")
-    print("[CraftCodex] " .. lines[1] .. "\n")
-    return true
+    if remaining == 0 then
+        appendLine(DIR .. "report.txt", "ALL CONTAINERS RESTORED")
+        os.rename(planFile, DIR .. "plan.done.lua")
+    end
 end
 
 return M

@@ -52,6 +52,8 @@ def merge_captures(folder):
     pieces, actors, invs = {}, {}, {}
     for f in files:  # later captures win
         d = json.load(open(f, encoding='utf-8'))
+        if not d['pieces']:  # taken outside the captured world (menu, another world)
+            continue
         for p in d['pieces']:
             pieces[p['id']] = p
         for a in d['actors']:

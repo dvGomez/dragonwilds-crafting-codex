@@ -65,6 +65,38 @@ if (mode == "probe")
         Console.WriteLine(JsonConvert.SerializeObject(provider.LoadPackage(p).GetExports(), Formatting.Indented));
     return;
 }
+if (mode == "refs")
+{
+    // Every gameplay asset (nodes, spawners, creatures, loot tables, fishing, farming...) that references item data,
+    // used to work out where each item comes from. Writes <outDir>/refs.json.
+    var itemRef = new System.Text.RegularExpressions.Regex(@"/(ITEM_|DA_Consumable)[A-Za-z0-9_]+");
+    var skipName = new System.Text.RegularExpressions.Regex(@"^(ITEM_|RECIPE_|BUILDPIECE_|DA_Recipe|DA_BaseBuilding|DA_Consumable|JOURNAL_|WBP_|T_|SM_|SK_|M_|MI_|NS_|ABP_|AM_|BS_|MSS_|ADA_)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    var cands = provider.Files.Keys.Where(k => k.EndsWith(".uasset")
+        && (k.Contains("/Gameplay/") || k.Contains("Loot", StringComparison.OrdinalIgnoreCase))
+        && !k.Contains("/Art/") && !k.Contains("/Audio/") && !k.Contains("/UI/") && !k.Contains("/Cinematics/")
+        && !skipName.IsMatch(Path.GetFileName(k))).ToList();
+    Console.Error.WriteLine($"refs candidates: {cands.Count}");
+    var ser = JsonSerializer.Create(new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
+    var outArr = new JArray();
+    int k2 = 0;
+    foreach (var path in cands)
+    {
+        if (++k2 % 2000 == 0) Console.Error.WriteLine($"  {k2}/{cands.Count}");
+        try
+        {
+            var exps = provider.LoadPackage(path).GetExports().ToList();
+            var arr = JArray.FromObject(exps, ser);
+            var s = arr.ToString(Formatting.None);
+            var hits = itemRef.Matches(s).Select(m => m.Value).Distinct().ToList();
+            if (hits.Count == 0) continue;
+            outArr.Add(new JObject { ["path"] = path, ["types"] = new JArray(exps.Select(e => e.ExportType).Distinct()), ["refs"] = new JArray(hits), ["exports"] = s.Length < 400_000 ? arr : null });
+        }
+        catch { }
+    }
+    File.WriteAllText(Path.Combine(outDir, "refs.json"), outArr.ToString(Formatting.None));
+    Console.Error.WriteLine($"refs: {outArr.Count} assets reference items");
+    return;
+}
 if (mode == "list")
 {
     foreach (var f in provider.Files.Keys.Where(k => k.Contains(args[4], StringComparison.OrdinalIgnoreCase)).Take(args.Length > 5 ? int.Parse(args[5]) : 50))
