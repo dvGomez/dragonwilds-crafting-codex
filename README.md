@@ -88,7 +88,7 @@ Rode **`Instalar.cmd`** de novo para extrair os dados atualizados.
 ```
 extractor/   C# + CUE4Parse: lê os .utoc/.ucas do jogo (itens, receitas, estações, locres PT/EN, ícones)
 tools/       build_db.js: gera app/data/db.json a partir da extração; build_demo.js: gera a demo web (docs/demo)
-docs/        site do GitHub Pages (página + demo com dados de exemplo, sem arte do jogo)
+docs/        site do GitHub Pages (página + demo com alguns itens de exemplo e seus ícones)
 app/         Electron + servidor local (src/) e interface (ui/)
 mod/         CraftCodex (Lua/UE4SS): main.lua recarrega core.lua sozinho quando ele muda
 scripts/     instalador e liga/desliga do mod (PowerShell)
@@ -103,6 +103,6 @@ scripts/     instalador e liga/desliga do mod (PowerShell)
 
 ## Aviso legal
 
-Projeto de fã, **não oficial** e sem vínculo com a Jagex. *RuneScape* e *RuneScape: Dragonwilds* são marcas da Jagex Ltd. Este repositório não distribui nenhum arquivo do jogo: ícones, textos, fontes e texturas são extraídos localmente da cópia instalada de cada usuário. Use por sua conta e risco.
+Projeto de fã, **não oficial** e sem vínculo com a Jagex. *RuneScape* e *RuneScape: Dragonwilds* são marcas da Jagex Ltd. O app não distribui arquivos do jogo: ícones, textos, fontes e texturas são extraídos localmente da cópia instalada de cada usuário. A exceção são os poucos ícones de itens usados na demo do site, só para ilustração. Use por sua conta e risco.
 
 Código sob licença [MIT](LICENSE).

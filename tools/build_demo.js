@@ -1,5 +1,5 @@
 // Builds the static web demo in docs/demo from the real app UI + a small slice of app/data/db.json.
-// No game art is published: icons are stripped and the game fonts/frames are replaced with web equivalents.
+// Only the item/station icons used by the demo are copied; the game fonts/frames are replaced with web equivalents.
 // Usage: node tools/build_demo.js
 'use strict';
 const fs = require('fs');
@@ -42,10 +42,10 @@ for (const r of Object.values(db.recipes)) {
 const items = {};
 for (const id of keep) {
   const it = db.items[id];
-  items[id] = { ...it, icon: null, recipes: (it.recipes || []).filter(r => recipes[r]) };
+  items[id] = { ...it, recipes: (it.recipes || []).filter(r => recipes[r]) };
 }
 const usedStations = new Set(Object.values(recipes).flatMap(r => r.stations));
-const stations = Object.fromEntries(Object.entries(db.stations).filter(([k]) => usedStations.has(k)).map(([k, v]) => [k, { ...v, icon: null }]));
+const stations = Object.fromEntries(Object.entries(db.stations).filter(([k]) => usedStations.has(k)).map(([k, v]) => [k, { ...v }]));
 const guidToItem = Object.fromEntries(Object.entries(db.guidToItem).filter(([, v]) => keep.has(v)));
 const demoDb = { actorToItem: {}, items, recipes, stations, guidToItem };
 
@@ -68,7 +68,12 @@ fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, 'db.json'), JSON.stringify(demoDb));
 fs.writeFileSync(path.join(OUT, 'state.json'), JSON.stringify(state));
 fs.copyFileSync(path.join(UI, 'app.js'), path.join(OUT, 'app.js'));
-fs.writeFileSync(path.join(OUT, 'config.js'), "window.CODEX_CONFIG = { db: 'db.json', state: 'state.json', events: null, icons: null };\n");
+fs.writeFileSync(path.join(OUT, 'config.js'), "window.CODEX_CONFIG = { db: 'db.json', state: 'state.json', events: null, icons: 'icons/' };\n");
+const iconDir = path.join(OUT, 'icons');
+fs.rmSync(iconDir, { recursive: true, force: true });
+fs.mkdirSync(iconDir, { recursive: true });
+const icons = new Set([...Object.values(items), ...Object.values(stations)].map(x => x.icon).filter(Boolean));
+for (const n of icons) fs.copyFileSync(path.join(ROOT, 'app', 'data', 'icons', n + '.png'), path.join(iconDir, n + '.png'));
 
 const css = fs.readFileSync(path.join(UI, 'style.css'), 'utf8')
   .replace(/^@font-face[^\n]*\n/gm, '')
@@ -101,5 +106,5 @@ const html = fs.readFileSync(path.join(UI, 'index.html'), 'utf8')
   .replace('<script src="app.js"></script>', '<script src="config.js"></script>\n  <script src="app.js"></script>');
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
 
-console.log(`demo: items=${Object.keys(items).length} recipes=${Object.keys(recipes).length} stations=${Object.keys(stations).length}`);
+console.log(`demo: items=${Object.keys(items).length} recipes=${Object.keys(recipes).length} stations=${Object.keys(stations).length} icons=${icons.size}`);
 console.log('sample inventory:', [...sources.inventory, ...sources.storage].map(s => `${items[s.path].name.pt} x${s.count}`).join(', '));
