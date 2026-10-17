@@ -41,7 +41,7 @@ Overlay para **RuneScape: Dragonwilds** que mostra a **árvore completa de cria�
 
 ## Como usar
 
-1. Abra o **Códex de Criação** (atalho na Área de Trabalho ou `Iniciar Codex.vbs`). Ele fica na bandeja do Windows.
+1. Abra o **Códex de Criação** (atalho na Área de Trabalho ou `Iniciar Codex.vbs`). Ele fica na bandeja do Windows e passa a iniciar junto com o Windows.
 2. No jogo, aperte **`F8`** para abrir ou fechar. `Esc` também fecha.
 3. Digite o item (ex.: `picareta de bronze` ou `bronze pickaxe`) e escolha na lista.
 4. Ajuste a **quantidade** no canto superior direito.
@@ -73,6 +73,7 @@ Rode **`Instalar.cmd`** de novo para extrair os dados atualizados.
 
 | Problema | Solução |
 |---|---|
+| `F8` não faz nada | O Códex precisa estar rodando (ícone na bandeja do Windows). Ele inicia sozinho com o Windows; dá para desligar isso no menu do ícone. Se fechou, abra pelo atalho. |
 | `F8` não abre por cima do jogo | Use o modo de vídeo **Janela sem bordas / Tela cheia em janela** no jogo. O modo tela cheia exclusiva não permite overlays. |
 | Quero outra tecla | Edite `hotkey` em `%APPDATA%\dragonwilds-crafting-codex\config.json` (ex.: `"F9"`, `"Alt+C"`) e reabra o Códex. |
 | "Mod ao vivo não detectado" | Verifique se o mod está ativado (`Ativar mod.cmd`) e se você está dentro de um mundo. O log do UE4SS fica em `...\RSDragonwilds\Binaries\Win64\ue4ss\UE4SS.log`. |

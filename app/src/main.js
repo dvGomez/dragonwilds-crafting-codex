@@ -5,7 +5,7 @@ const path = require('path');
 const server = require('./server');
 
 const CONFIG_FILE = path.join(app.getPath('userData'), 'config.json');
-const DEFAULTS = { hotkey: 'F8', port: 7777, bounds: null, pinned: false, opacity: 1 };
+const DEFAULTS = { hotkey: 'F8', port: 7777, bounds: null, pinned: false, opacity: 1, autoStart: true };
 let config = { ...DEFAULTS };
 try { config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')) }; } catch { /* first run */ }
 const LOG_FILE = path.join(app.getPath('userData'), 'codex.log');
@@ -70,12 +70,20 @@ function hide() { if (win) { log('hide'); win.hide(); } }
 // F8 = open/close. The game grabs focus back at times (e.g. after dying), so never auto-hide on blur.
 function toggle() { if (win && win.isVisible()) hide(); else show(); }
 
+// Start hidden in the tray when Windows starts, so F8 works whenever the game is opened.
+function applyAutoStart() {
+  const opts = { openAtLogin: !!config.autoStart, name: 'Codex de Criacao', path: process.execPath, args: app.isPackaged ? ['--hidden'] : [app.getAppPath(), '--hidden'] };
+  app.setLoginItemSettings(opts);
+  log(`autoStart=${opts.openAtLogin}`);
+}
+
 function buildTray() {
   const icon = nativeImage.createFromPath(path.join(__dirname, '..', 'ui', 'assets', 'icon.png'));
   tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon.resize({ width: 16, height: 16 }));
   tray.setToolTip(`Códex de Criação (${config.hotkey})`);
   const menu = () => Menu.buildFromTemplate([
     { label: `Mostrar / esconder  (${config.hotkey})`, click: toggle },
+    { label: 'Iniciar com o Windows', type: 'checkbox', checked: !!config.autoStart, click: (i) => { config.autoStart = i.checked; saveConfig(); applyAutoStart(); } },
     { label: 'Abrir no navegador', click: () => shell.openExternal(url()) },
     { label: 'Resetar posição da janela', click: () => { config.bounds = null; saveConfig(); win.destroy(); createWindow(); show(); } },
     { type: 'separator' },
@@ -101,6 +109,7 @@ app.whenReady().then(async () => {
   }
   createWindow();
   buildTray();
+  applyAutoStart();
   const ok = globalShortcut.register(config.hotkey, () => { log('hotkey pressed'); toggle(); });
   log(`started; hotkey ${config.hotkey} registered=${ok}`);
   if (!process.argv.includes('--hidden')) win.once('ready-to-show', show);
