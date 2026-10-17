@@ -17,3 +17,6 @@ mod/CraftCodex/scripts/probe.lua
 mod/CraftCodex/scripts/probe_out.txt
 .claude/
 *.log
+
+# Release build output
+dist/
