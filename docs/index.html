@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Códex de Criação · RuneScape: Dragonwilds</title>
+  <meta name="description" content="Overlay para RuneScape: Dragonwilds: busque qualquer item em português ou inglês e veja a árvore completa de criação, com o que você já tem e o que falta.">
+  <meta property="og:title" content="Códex de Criação · RuneScape: Dragonwilds">
+  <meta property="og:description" content="Árvore completa de criação de qualquer item, com o seu inventário ao vivo. Abre com F8 dentro do jogo.">
+  <meta property="og:image" content="https://dvgomez.github.io/dragonwilds-crafting-codex/screenshot.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bona+Nova+SC&family=Noto+Sans:wght@400;600&display=swap">
+  <style>
+    :root {
+      --bg: #070605; --panel: #12100c; --line: #3a2f1e; --gold: #d6b36a; --gold-2: #f2dca0; --gold-dim: #8c7442;
+      --text: #e8dfcb; --muted: #a39782; --ok: #9fc77a; --bad: #e07a5f;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 "Noto Sans", system-ui, sans-serif; }
+    a { color: var(--gold-2); }
+    img { max-width: 100%; display: block; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+    h1, h2, h3, .serif { font-family: "Bona Nova SC", Georgia, serif; font-weight: 400; letter-spacing: 0.04em; }
+    h2 { font-size: clamp(26px, 4vw, 36px); color: var(--gold-2); text-align: center; margin: 0 0 8px; }
+    .lead { color: var(--muted); text-align: center; max-width: 680px; margin: 0 auto 36px; }
+    .rule { height: 1px; border: 0; background: linear-gradient(90deg, transparent, var(--gold-dim), transparent); margin: 0; }
+
+    /* nav */
+    nav { position: sticky; top: 0; z-index: 10; background: rgba(7, 6, 5, 0.85); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(214, 179, 106, 0.18); }
+    nav .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+    .brand { font-family: "Bona Nova SC", serif; font-size: 21px; color: var(--gold-2); text-decoration: none; margin-right: auto; white-space: nowrap; }
+    nav a.link { color: var(--muted); text-decoration: none; font-size: 14px; }
+    nav a.link:hover { color: var(--gold-2); }
+    @media (max-width: 640px) { nav a.link:not(.gh) { display: none; } }
+
+    /* buttons */
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 3px; text-decoration: none; font-family: "Bona Nova SC", serif; font-size: 17px; letter-spacing: 0.05em; border: 1px solid var(--gold-dim); color: var(--gold-2); background: linear-gradient(180deg, #2a2116, #15100a); transition: box-shadow 0.15s, border-color 0.15s; }
+    .btn:hover { border-color: var(--gold); box-shadow: 0 0 18px rgba(214, 179, 106, 0.25); }
+    .btn.primary { background: linear-gradient(180deg, #8a6a2e, #4d3a17); border-color: var(--gold); color: #fff6dc; }
+
+    /* hero */
+    .hero { padding: 72px 0 40px; text-align: center; background: radial-gradient(ellipse at 50% 0%, rgba(214, 179, 106, 0.14), transparent 60%); }
+    .eyebrow { color: var(--gold); font-size: 13px; letter-spacing: 0.25em; text-transform: uppercase; }
+    .hero h1 { font-size: clamp(40px, 8vw, 76px); line-height: 1.05; margin: 10px 0 14px;
+      background: linear-gradient(180deg, var(--gold-2), var(--gold) 55%, #9c7a3c); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero p { max-width: 720px; margin: 0 auto 28px; color: #d3c8b2; font-size: 18px; }
+    .hero .en { color: var(--muted); font-size: 14px; font-style: italic; margin-top: -14px; }
+    .ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
+    .shot { border: 1px solid var(--gold-dim); border-radius: 4px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 0 6px rgba(214, 179, 106, 0.06); }
+
+    section { padding: 72px 0; }
+
+    /* features */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 20px; }
+    .card h3 { margin: 0 0 6px; color: var(--gold-2); font-size: 20px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    .card .ico { font-size: 22px; margin-bottom: 8px; }
+
+    /* demo */
+    .demo-frame { width: 100%; height: 780px; border: 1px solid var(--gold-dim); border-radius: 4px; background: #000; display: block; }
+    .demo-note { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; }
+    .chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+    .chips button { background: #17120c; border: 1px solid var(--line); color: var(--text); border-radius: 999px; padding: 6px 14px; font: 14px "Noto Sans", sans-serif; cursor: pointer; }
+    .chips button:hover, .chips button.on { border-color: var(--gold); color: var(--gold-2); }
+    @media (max-width: 700px) { .demo-frame { height: 1100px; } }
+
+    /* steps */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; counter-reset: s; }
+    .step { counter-increment: s; position: relative; padding-top: 56px; }
+    .step::before { content: counter(s); position: absolute; top: 14px; left: 20px; font: 32px "Bona Nova SC", serif; color: var(--gold); }
+    code, kbd { background: #1c160e; border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px; font-size: 0.92em; color: var(--gold-2); }
+    kbd { font-family: "Noto Sans", sans-serif; font-weight: 600; }
+    .req { text-align: center; color: var(--muted); margin-top: 22px; font-size: 14px; }
+
+    /* mod */
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    @media (max-width: 800px) { .split { grid-template-columns: 1fr; } }
+    ul.check { list-style: none; padding: 0; margin: 0; }
+    ul.check li { padding: 6px 0 6px 28px; position: relative; color: #d3c8b2; }
+    ul.check li::before { content: "✔"; position: absolute; left: 0; color: var(--ok); }
+    .warn { border-color: rgba(227, 179, 65, 0.4); }
+    .warn h3 { color: #e3b341; }
+
+    /* faq */
+    details { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 14px 18px; margin-bottom: 10px; }
+    summary { cursor: pointer; color: var(--gold-2); font-weight: 600; }
+    details p { color: var(--muted); margin: 10px 0 0; }
+
+    footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--muted); font-size: 13px; text-align: center; }
+    footer p { max-width: 760px; margin: 6px auto; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="wrap">
+      <a class="brand" href="#">Códex de Criação</a>
+      <a class="link" href="#recursos">Recursos</a>
+      <a class="link" href="#demo">Demo</a>
+      <a class="link" href="#instalar">Instalar</a>
+      <a class="link gh" href="https://github.com/dvGomez/dragonwilds-crafting-codex">GitHub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">RuneScape: Dragonwilds</div>
+      <h1>Códex de Criação</h1>
+      <p>Busque qualquer item do jogo, em português ou inglês, e veja a <b>árvore completa de criação</b>, com quantidades, estações e <b>o que você já tem ou ainda falta</b> no inventário e nos baús da sessão em que você está jogando.</p>
+      <p class="en">In-game crafting tree overlay for RuneScape: Dragonwilds, with your live inventory. English &amp; PT-BR.</p>
+      <div class="ctas">
+        <a class="btn primary" href="https://github.com/dvGomez/dragonwilds-crafting-codex/releases/latest/download/Codex-de-Criacao.zip">⬇ Baixar</a>
+        <a class="btn" href="#demo">Experimentar a demo</a>
+        <a class="btn" href="https://github.com/dvGomez/dragonwilds-crafting-codex">Ver no GitHub</a>
+      </div>
+      <img class="shot" src="screenshot.png" alt="Códex de Criação mostrando a árvore da Picareta de Bronze" width="1400" height="860">
+    </div>
+  </header>
+
+  <hr class="rule">
+  <section id="recursos">
+    <div class="wrap">
+      <h2>O que ele faz</h2>
+      <p class="lead">Feito para não precisar abrir wiki nem planilha no meio da partida.</p>
+      <div class="grid">
+        <div class="card"><div class="ico">🔎</div><h3>Busca PT / EN</h3><p>Todos os itens do jogo (~2.300) e peças de construção, com os nomes oficiais em português e inglês.</p></div>
+        <div class="card"><div class="ico">🌳</div><h3>Árvore inteira</h3><p>Cada ingrediente até a matéria-prima, com quantidades, quantas criações, sobras e em qual estação.</p></div>
+        <div class="card"><div class="ico">🎒</div><h3>O que você tem</h3><p>Soma bolsa, equipamento, baús e estações construídos e mostra exatamente o que falta.</p></div>
+        <div class="card"><div class="ico">📋</div><h3>Lista e etapas</h3><p>“Falta coletar” vira sua lista de compras, e as etapas aparecem na ordem certa para criar.</p></div>
+        <div class="card"><div class="ico">🎮</div><h3>Dentro do jogo</h3><p>Abre por cima do jogo com <kbd>F8</kbd>, no visual do próprio Dragonwilds.</p></div>
+        <div class="card"><div class="ico">📡</div><h3>Sessão ao vivo</h3><p>Com o mod opcional, lê a sessão atual: no seu mundo ou no de um amigo, inclusive crossplay.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+  <section id="demo">
+    <div class="wrap">
+      <h2>Experimente</h2>
+      <p class="lead">A interface de verdade, aqui no navegador, com alguns itens e um inventário de exemplo. Clique nos ingredientes, troque a quantidade e as receitas.</p>
+      <div class="chips" id="chips">
+        <button data-item="Picareta de Bronze" class="on">Picareta de Bronze</button>
+        <button data-item="Cajado da Luz">Cajado da Luz</button>
+        <button data-item="Espada de Aço">Espada de Aço</button>
+        <button data-item="Picareta de Ferro">Picareta de Ferro</button>
+      </div>
+      <iframe class="demo-frame" id="demoFrame" src="demo/?item=Picareta%20de%20Bronze" title="Demo do Códex de Criação" loading="lazy"></iframe>
+      <p class="demo-note">Na demo os ícones do jogo não aparecem (são da Jagex). No app instalado eles são extraídos da sua cópia do jogo.</p>
+    </div>
+  </section>
+
+  <hr class="rule">
+  <section id="instalar">
+    <div class="wrap">
+      <h2>Como instalar</h2>
+      <p class="lead">Windows 10/11, com o jogo instalado pela Steam.</p>
+      <div class="steps">
+        <div class="card step"><h3>Baixe</h3><p><a href="https://github.com/dvGomez/dragonwilds-crafting-codex/releases/latest/download/Codex-de-Criacao.zip">Baixe o ZIP</a> e extraia em qualquer pasta, ou use <code>git clone</code>.</p></div>
+        <div class="card step"><h3>Instale</h3><p>Dê dois cliques em <code>Instalar.cmd</code>. Ele acha o jogo, extrai os dados da sua instalação e cria o atalho. Leva de 2 a 4 minutos.</p></div>
+        <div class="card step"><h3>Jogue</h3><p>Abra o <b>Códex de Criação</b> pelo atalho e aperte <kbd>F8</kbd> no jogo. <kbd>Esc</kbd> fecha.</p></div>
+      </div>
+      <p class="req">Precisa do <a href="https://nodejs.org">Node.js 20+</a>; o instalador oferece instalar se faltar. Depois de cada patch do jogo, rode o <code>Instalar.cmd</code> de novo.</p>
+    </div>
+  </section>
+
+  <hr class="rule">
+  <section id="mod">
+    <div class="wrap">
+      <h2>Mod ao vivo (opcional)</h2>
+      <p class="lead">Sem o mod, o Códex usa o último save do seu mundo. Com ele, lê a sessão atual a cada 2 segundos.</p>
+      <div class="split">
+        <div class="card">
+          <h3>Como funciona</h3>
+          <ul class="check">
+            <li>Usa o <a href="https://github.com/UE4SS-RE/RE-UE4SS">UE4SS</a> oficial, com checksum conferido na instalação.</li>
+            <li><b>Só lê</b> o inventário e grava um arquivo no seu PC. Não altera itens e não envia nada pela rede.</li>
+            <li>Funciona no seu mundo e no de amigos; baús precisam estar carregados perto de você.</li>
+            <li><code>Desativar mod.cmd</code> deixa o jogo 100% original; <code>Ativar mod.cmd</code> liga de novo.</li>
+          </ul>
+        </div>
+        <div class="card warn">
+          <h3>⚠ Use com consciência</h3>
+          <p style="color:var(--muted)">Mods não são oficiais. Hoje o jogo roda sem anti-cheat e o UE4SS funciona em multiplayer, mas uma atualização pode mudar isso. Se o jogo não abrir depois de um patch, use <code>Desativar mod.cmd</code>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+  <section id="faq">
+    <div class="wrap" style="max-width:820px">
+      <h2>Perguntas</h2>
+      <p class="lead"></p>
+      <details><summary>O F8 não abre por cima do jogo</summary><p>Use o modo de vídeo “janela sem bordas” / “tela cheia em janela”. A tela cheia exclusiva não permite overlays.</p></details>
+      <details><summary>Dá para trocar a tecla?</summary><p>Sim: edite <code>hotkey</code> em <code>%APPDATA%\dragonwilds-crafting-codex\config.json</code> (ex.: <code>"F9"</code> ou <code>"Alt+C"</code>) e reabra o Códex.</p></details>
+      <details><summary>Por que o repositório não traz os dados do jogo?</summary><p>Ícones, textos e fontes são da Jagex. O instalador extrai tudo da cópia instalada de cada pessoa, o que também deixa os dados sempre na versão do seu jogo.</p></details>
+      <details><summary>Funciona no navegador ou no overlay da Steam?</summary><p>Sim. Com o Códex aberto, acesse <code>http://127.0.0.1:7777</code> no navegador ou no navegador do overlay da Steam (<kbd>Shift</kbd>+<kbd>Tab</kbd>).</p></details>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p class="serif" style="color:var(--gold);font-size:18px">Códex de Criação</p>
+      <p>Projeto de fã, não oficial e sem vínculo com a Jagex. <i>RuneScape</i> e <i>RuneScape: Dragonwilds</i> são marcas da Jagex Ltd. Nenhum arquivo do jogo é distribuído.</p>
+      <p>Código aberto sob licença MIT · <a href="https://github.com/dvGomez/dragonwilds-crafting-codex">github.com/dvGomez/dragonwilds-crafting-codex</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // demo item chips
+    document.getElementById('chips').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      document.querySelectorAll('#chips button').forEach(x => x.classList.toggle('on', x === b));
+      document.getElementById('demoFrame').src = 'demo/?item=' + encodeURIComponent(b.dataset.item);
+    });
+  </script>
+</body>
+</html>

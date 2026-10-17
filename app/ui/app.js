@@ -6,7 +6,8 @@ const I18N = {
     title: 'Códex de Criação', searchPh: 'Buscar item (português ou inglês)...', tabCraft: 'Criação', tabInv: 'Inventário',
     emptyTitle: 'Busque qualquer item do jogo', emptySub: 'Em português ou inglês. Mostro a árvore inteira de criação, quantidades e o que você já tem.',
     missingTitle: 'Falta coletar', stepsTitle: 'Etapas de criação', sourcesTitle: 'Considerar itens de', filterPh: 'Filtrar...',
-    live: 'Sessão ao vivo', liveNoPlayer: 'Jogo aberto (no menu)', saveMode: 'Save', ago: 'há', noData: 'Nenhum dado do jogo encontrado',
+    live: 'Sessão ao vivo', demo: 'Demonstração · inventário de exemplo',
+    srcNoteDemo: 'Demonstração com alguns itens e um inventário fictício. Instale o Códex para usar todos os itens do jogo com o seu inventário de verdade.', liveNoPlayer: 'Jogo aberto (no menu)', saveMode: 'Save', ago: 'há', noData: 'Nenhum dado do jogo encontrado',
     have: 'tem', need: 'precisa', missing: 'faltam', craft: 'criar', crafts: 'criações', ready: 'Você já tem tudo para criar!',
     canCraftNow: 'Pode criar agora', notReady: 'Ainda faltam materiais', allCollected: 'Nada para coletar, você já tem tudo.',
     noSteps: 'Nenhuma etapa necessária.', youHave: 'Você tem', inBag: 'na bolsa', makes: 'faz', perCraft: 'por criação',
@@ -24,7 +25,8 @@ const I18N = {
     title: 'Crafting Codex', searchPh: 'Search item (English or Portuguese)...', tabCraft: 'Crafting', tabInv: 'Inventory',
     emptyTitle: 'Search any item in the game', emptySub: 'In English or Portuguese. Shows the whole crafting tree, quantities and what you already have.',
     missingTitle: 'Still to gather', stepsTitle: 'Crafting steps', sourcesTitle: 'Count items from', filterPh: 'Filter...',
-    live: 'Live session', liveNoPlayer: 'Game open (in menu)', saveMode: 'Save', ago: '', noData: 'No game data found',
+    live: 'Live session', demo: 'Demo · sample inventory',
+    srcNoteDemo: 'Demo with a few items and a made-up inventory. Install the Codex to use every item in the game with your real inventory.', liveNoPlayer: 'Game open (in menu)', saveMode: 'Save', ago: '', noData: 'No game data found',
     have: 'have', need: 'need', missing: 'missing', craft: 'craft', crafts: 'crafts', ready: 'You have everything to craft it!',
     canCraftNow: 'Ready to craft', notReady: 'Materials still missing', allCollected: 'Nothing to gather, you have it all.',
     noSteps: 'No steps needed.', youHave: 'You have', inBag: 'in bag', makes: 'makes', perCraft: 'per craft',
@@ -65,18 +67,23 @@ const alt = (item) => item ? (item.name[S.lang === 'pt' ? 'en' : 'pt'] || '') : 
 const fmt = (n) => n.toLocaleString(S.lang === 'pt' ? 'pt-BR' : 'en-US');
 const norm = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').trim();
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const iconUrl = (item) => item && item.icon ? `/icons/${encodeURIComponent(item.icon)}.png` : null;
+// Data endpoints; the static demo (docs/demo) overrides these through window.CODEX_CONFIG.
+const CFG = Object.assign({ db: '/api/db', state: '/api/state', events: '/api/events', icons: '/icons/' }, window.CODEX_CONFIG || {});
+const iconUrl = (item) => item && item.icon && CFG.icons ? `${CFG.icons}${encodeURIComponent(item.icon)}.png` : null;
 const isElectron = !!window.codex;
 
 function slot(item, cls = '', qty = null) {
   const u = iconUrl(item);
-  return `<div class="slot ${cls}" data-tip="${esc(item?.id)}">${u ? `<img src="${u}" alt="" loading="lazy">` : ''}${qty != null ? `<span class="qty">${esc(qty)}</span>` : ''}</div>`;
+  // no icon (e.g. the web demo): show initials of the first and last word, "Picareta de Bronze" -> "PB"
+  const words = item ? nm(item).split(/\s+/).filter(w => w.length > 2) : [];
+  const mono = words.length ? (words[0][0] + (words.length > 1 ? words[words.length - 1][0] : '')) : '';
+  return `<div class="slot ${cls}" data-tip="${esc(item?.id)}">${u ? `<img src="${u}" alt="" loading="lazy">` : `<span class="mono">${esc(mono)}</span>`}${qty != null ? `<span class="qty">${esc(qty)}</span>` : ''}</div>`;
 }
 
 function stationLabel(sid) {
   const st = S.db.stations[sid];
   if (!st) return '';
-  const icon = st.icon ? `<img src="/icons/${encodeURIComponent(st.icon)}.png" alt="">` : '';
+  const icon = st.icon && CFG.icons ? `<img src="${CFG.icons}${encodeURIComponent(st.icon)}.png" alt="">` : '';
   return `<span class="station">${icon}${esc(st.name[S.lang] || st.name.en)}</span>`;
 }
 
@@ -305,7 +312,10 @@ function renderStatus() {
   const el = $('#status');
   const inv = S.inv;
   if (!inv) { el.className = 'status'; el.innerHTML = `<span class="dot"></span>${esc(t('noData'))}`; return; }
-  if (inv.mode === 'live') {
+  if (inv.mode === 'demo') {
+    el.className = 'status live';
+    el.innerHTML = `<span class="dot"></span>${esc(t('demo'))}`;
+  } else if (inv.mode === 'live') {
     el.className = 'status live';
     el.innerHTML = `<span class="dot"></span>${esc(inv.hasPlayer ? t('live') : t('liveNoPlayer'))}`;
     el.title = '';
@@ -333,7 +343,7 @@ function renderSources() {
     const opts = inv.worlds.map(w => `<option ${w.name === inv.world ? 'selected' : ''}>${esc(w.name)}</option>`).join('');
     rows.push(`<label class="src">${S.lang === 'pt' ? 'Mundo' : 'World'}: <select id="worldPick" class="recipe-pick">${opts}</select></label>`);
   }
-  rows.push(`<div class="src-note">${esc(inv.mode === 'live' ? t('srcNoteLive') : t('srcNoteSave'))}</div>`);
+  rows.push(`<div class="src-note">${esc(t({ live: 'srcNoteLive', demo: 'srcNoteDemo' }[inv.mode] || 'srcNoteSave'))}</div>`);
   el.innerHTML = rows.join('');
 }
 
@@ -457,7 +467,7 @@ function showTip(el, ev) {
 async function loadState() {
   const world = LS.get('world', '');
   try {
-    const r = await fetch('/api/state' + (world ? `?world=${encodeURIComponent(world)}` : ''));
+    const r = await fetch(CFG.state + (world && CFG.events ? `?world=${encodeURIComponent(world)}` : ''));
     S.inv = await r.json();
   } catch {
     S.inv = null;
@@ -469,7 +479,7 @@ async function loadState() {
 
 async function init() {
   if (!isElectron) document.body.classList.add('browser');
-  S.db = await (await fetch('/api/db')).json();
+  S.db = await (await fetch(CFG.db)).json();
   buildSearchIndex();
   if (S.target && !S.db.items[S.target]) S.target = null;
   // deep link: ?item=Bronze%20Pickaxe (or the Portuguese name)
@@ -479,10 +489,12 @@ async function init() {
     if (hit) { S.target = (hit.it || hit).id; S.qty = 1; }
   }
   await loadState();
-  try {
-    const es = new EventSource('/api/events');
-    es.addEventListener('changed', () => loadState());
-  } catch { setInterval(loadState, 10000); }
+  if (CFG.events) {
+    try {
+      const es = new EventSource(CFG.events);
+      es.addEventListener('changed', () => loadState());
+    } catch { setInterval(loadState, 10000); }
+  }
   setInterval(renderStatus, 5000);
   $('#search').focus();
 }

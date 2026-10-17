@@ -107,6 +107,9 @@ body.browser .electron-only { display: none; }
   background: url("assets/T_Common_ItemSlotsBackground.png") center / 100% 100%;
   display: grid; place-items: center;
 }
+.slot .mono { font: 600 15px "BonaNova", serif; color: var(--gold-dim); letter-spacing: 0.02em; text-transform: uppercase; }
+.slot.sm .mono { font-size: 11px; }
+.slot.lg .mono { font-size: 24px; }
 .slot img { width: 86%; height: 86%; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.7)); }
 .slot.sm { --slot: 36px; }
 .slot.lg { --slot: 84px; }

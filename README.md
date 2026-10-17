@@ -2,6 +2,10 @@
 
 Overlay para **RuneScape: Dragonwilds** que mostra a **árvore completa de criação** de qualquer item do jogo, com quantidades, estações e **o que você já tem ou ainda falta**, lendo o seu inventário e os baús **da sessão em que você está jogando** (inclusive no mundo de um amigo).
 
+**🌐 Site e demo interativa: https://dvgomez.github.io/dragonwilds-crafting-codex/**
+
+**⬇ Download: [Codex-de-Criacao.zip](https://github.com/dvGomez/dragonwilds-crafting-codex/releases/latest/download/Codex-de-Criacao.zip)** ([todas as versões](https://github.com/dvGomez/dragonwilds-crafting-codex/releases))
+
 ![Códex de Criação](docs/screenshot.png)
 
 > *English: in-game overlay for RuneScape: Dragonwilds. Search any item (EN or PT-BR) and get the full crafting tree, with quantities, stations, and what you already have or are still missing, based on your live session inventory and chests. Windows only. Install: run `Instalar.cmd`.*
@@ -25,7 +29,7 @@ Overlay para **RuneScape: Dragonwilds** que mostra a **árvore completa de cria�
 
 ## Instalação
 
-1. Baixe o projeto: **Code → Download ZIP** (e extraia) ou `git clone`.
+1. Baixe o **[Codex-de-Criacao.zip](https://github.com/dvGomez/dragonwilds-crafting-codex/releases/latest/download/Codex-de-Criacao.zip)** da última versão e extraia em qualquer pasta (ou use `git clone`).
 2. Dê dois cliques em **`Instalar.cmd`**. Ele:
    - encontra o jogo automaticamente nas bibliotecas da Steam (ou pergunta a pasta);
    - extrai itens, receitas, textos PT/EN e ícones **do seu jogo instalado** (1 a 3 minutos);
@@ -83,7 +87,8 @@ Rode **`Instalar.cmd`** de novo para extrair os dados atualizados.
 
 ```
 extractor/   C# + CUE4Parse: lê os .utoc/.ucas do jogo (itens, receitas, estações, locres PT/EN, ícones)
-tools/       build_db.js: gera app/data/db.json a partir da extração
+tools/       build_db.js: gera app/data/db.json a partir da extração; build_demo.js: gera a demo web (docs/demo)
+docs/        site do GitHub Pages (página + demo com dados de exemplo, sem arte do jogo)
 app/         Electron + servidor local (src/) e interface (ui/)
 mod/         CraftCodex (Lua/UE4SS): main.lua recarrega core.lua sozinho quando ele muda
 scripts/     instalador e liga/desliga do mod (PowerShell)

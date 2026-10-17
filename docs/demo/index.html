@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; img-src 'self' data:">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bona+Nova+SC&family=Noto+Sans:wght@400;600&display=swap">
+  <title>Códex de Criação · Demo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="frame" id="frame">
+    <header class="titlebar" id="titlebar">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <h1 data-i18n="title">Códex de Criação</h1>
+      </div>
+      <div class="status" id="status" title=""></div>
+      <div class="titlebar-actions">
+        <button class="chip" id="langBtn" title="Idioma / Language">PT</button>
+        <button class="icon-btn electron-only" id="hideBtn" title="Esconder (atalho)">&#x2014;</button>
+        <button class="icon-btn electron-only" id="quitBtn" title="Fechar (F8 abre de novo; para sair use o ícone na bandeja)">&#x2715;</button>
+      </div>
+    </header>
+
+    <div class="searchbar">
+      <div class="search-wrap">
+        <span class="search-icon"></span>
+        <input id="search" type="search" autocomplete="off" spellcheck="false" data-i18n-ph="searchPh" placeholder="Buscar item...">
+        <div class="results" id="results" hidden></div>
+      </div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="craft" data-i18n="tabCraft">Criação</button>
+        <button class="tab" data-tab="inv" data-i18n="tabInv">Inventário</button>
+      </nav>
+    </div>
+
+    <main id="view-craft" class="view">
+      <section class="panel tree-panel">
+        <div id="target" class="target empty">
+          <div class="placeholder">
+            <div class="placeholder-title" data-i18n="emptyTitle">Busque qualquer item do jogo</div>
+            <div class="placeholder-sub" data-i18n="emptySub">Em português ou inglês. Mostro a árvore inteira de criação, quantidades e o que você já tem.</div>
+          </div>
+        </div>
+        <div id="tree" class="tree"></div>
+      </section>
+      <aside class="panel side-panel">
+        <section class="side-block">
+          <h2 data-i18n="missingTitle">Falta coletar</h2>
+          <div id="missing" class="mat-list"></div>
+        </section>
+        <section class="side-block">
+          <h2 data-i18n="stepsTitle">Etapas de criação</h2>
+          <ol id="steps" class="steps"></ol>
+        </section>
+        <section class="side-block">
+          <h2 data-i18n="sourcesTitle">Considerar itens de</h2>
+          <div id="sources" class="sources"></div>
+        </section>
+      </aside>
+    </main>
+
+    <main id="view-inv" class="view" hidden>
+      <section class="panel inv-panel">
+        <div class="inv-head">
+          <input id="invFilter" type="search" data-i18n-ph="filterPh" placeholder="Filtrar...">
+          <span id="invSummary" class="muted"></span>
+        </div>
+        <div id="invGrid" class="inv-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="tooltip" id="tooltip" hidden></div>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
