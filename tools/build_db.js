@@ -271,9 +271,10 @@ for (const [tname, t] of Object.entries(tables)) {
 }
 
 function classify(it) {
-  if (!EQUIP.has(it.type) || it.junk) return null;
   const tags = it.tags || [];
   const has = (t) => tags.some(x => x.startsWith(t));
+  // Law/Earth/Astral/Nature runes are plain ItemData but tagged as rune ammo
+  if ((!EQUIP.has(it.type) && !has('ItemFilter.Type.Equipment.Ammo.Rune')) || it.junk || /^\[PH\]/.test(it.name.en)) return null;
   const id = it.id.split('/').pop();
   const craft = (it.recipes || []).map(r => recipes[r]).find(r => r && !r.junk && recipeLabel[r.id]);
   const label = craft ? recipeLabel[craft.id].en : '';
@@ -299,6 +300,12 @@ function classify(it) {
     else if (/Ring/i.test(id)) cat = 'ring';
     else if (/Amulet|Necklace|Pendant/i.test(id)) cat = 'amulet';
     else if (it.type === 'TrinketItemData' || it.type === 'JewelleryData') cat = 'trinket';
+    // untagged held weapons (e.g. vendor-only Scarab Staff): go by the asset/English name
+    else if (/Staff|Sceptre|Stave/i.test(id + ' ' + it.name.en)) cat = 'staff';
+    else if (/Wand/i.test(id + ' ' + it.name.en)) cat = 'wand';
+    else if (/Crossbow/i.test(id)) cat = 'crossbow';
+    else if (/Longbow/i.test(id)) cat = 'longbow';
+    else if (/Bow/i.test(id)) cat = 'shortbow';
     else if (has('ItemFilter.Type.Equipment.Armour')) cat = 'special';
     else return null;
   }
@@ -313,6 +320,15 @@ function classify(it) {
     cls = /Magic|Mage|Wizard|Arcan|Sorcer|Rune\b/i.test(n) ? 'magic' : /Ranged|Ranger|Archer|Bow|Hunter/i.test(n) ? 'ranged'
       : /Attack|Melee|Strength|Warrior|Defen|Fighter|Berserk/i.test(n) ? 'melee' : 'general';
   }
+  // masterworks are weapons/shields too: list them with their kind, flagged "mw"
+  let mw = false;
+  if (cat === 'masterwork') {
+    const real = has('ItemFilter.Type.Equipment.Shield') ? 'shield'
+      : has('ItemFilter.Type.Equipment.Weapon.Magic') ? (/Wand/i.test(id) ? 'wand' : 'staff')
+      : has('ItemFilter.Type.Equipment.Weapon.Ranged') ? (/Crossbow/i.test(id) ? 'crossbow' : /Longbow/i.test(id) ? 'longbow' : 'shortbow')
+      : has('ItemFilter.Type.Equipment.Weapon.Melee') ? (/Maul|Great|Hammer|Fury|Titan|2H/i.test(id + ' ' + it.name.en) ? 'twohand' : 'onehand') : null;
+    if (real) { cat = real; mw = true; }
+  }
   // generic bench tabs ("One Handed Weapons" on the Crafting Table) -> class-specific category
   if (cat === 'shortbow' && /Longbow/i.test(id)) cat = 'longbow';
   if (cls === 'magic' && (cat === 'onehand' || cat === 'twohand')) cat = /Wand/i.test(id) ? 'wand' : 'staff';
@@ -321,7 +337,7 @@ function classify(it) {
   const tm = id.match(/_T(\d+)_/i);
   const mat = cat === 'runes' ? -1 : MATERIALS.findIndex(m => new RegExp(`(^|_)${m}(_|$)`, 'i').test(id));
   const tier = tiers.length ? Math.min(...tiers) : tm ? +tm[1] : mat >= 0 ? Math.round(mat / 2) : 0;
-  return { cls, cat, tier };
+  return mw ? { cls, cat, tier, mw: true } : { cls, cat, tier };
 }
 for (const it of Object.values(items)) {
   const role = classify(it);

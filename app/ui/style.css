@@ -269,3 +269,4 @@ h2 { margin: 2px 0 10px; font: 400 17px "BonaNova", serif; color: var(--gold); l
 .cc-name { font-weight: 600; font-size: 13px; line-height: 1.25; }
 .cc-sub { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tier { display: inline-block; font: 600 10px "Noto", sans-serif; color: var(--gold); border: 1px solid var(--gold-dim); border-radius: 2px; padding: 0 4px; margin-right: 5px; }
+.tier.mw { color: #e0a7ff; border-color: #8a5ea8; }

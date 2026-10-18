@@ -565,13 +565,13 @@ function renderClasses() {
     const cards = closed ? '' : `<div class="class-cards">${items.map(it => {
       const have = haveOf(it.id);
       const r = chosenRecipe(it.id);
-      const where = r ? (r.stations[0] ? `${t('craftAt')} ${S.db.stations[r.stations[0]]?.name[S.lang] || ''}` : '') : srcHint(it, 1);
+      const where = r && r.stations[0] ? `${t('craftAt')} ${S.db.stations[r.stations[0]]?.name[S.lang] || ''}` : srcHint(it, 1);
       const locked = r && !isUnlocked(r);
       return `<div class="class-card ${have ? 'owned' : ''}" data-goto="${esc(it.id)}">
         ${slot(it, '', have ? fmt(have) : null)}
         <div class="cc-main">
           <div class="cc-name">${esc(nm(it))}</div>
-          <div class="cc-sub">${it.role.tier ? `<span class="tier">T${it.role.tier}</span>` : ''}${locked ? '🔒 ' : ''}${esc(where)}</div>
+          <div class="cc-sub">${it.role.mw ? `<span class="tier mw">${esc(S.db.categories.masterwork?.[S.lang] || 'Masterwork')}</span>` : ''}${it.role.tier ? `<span class="tier">T${it.role.tier}</span>` : ''}${locked ? '🔒 ' : ''}${esc(where)}</div>
         </div>
       </div>`;
     }).join('')}</div>`;
