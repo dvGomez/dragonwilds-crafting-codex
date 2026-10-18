@@ -3,7 +3,7 @@
 
 const I18N = {
   pt: {
-    title: 'Códex de Criação', searchPh: 'Buscar item (português ou inglês)...', tabCraft: 'Criação', tabInv: 'Inventário',
+    title: 'Códex de Criação', searchPh: 'Buscar item (português ou inglês)...', tabCraft: 'Criação', tabInv: 'Inventário', tabClasses: 'Classes', haveOnly: 'Só o que tenho', items: 'itens', craftAt: 'Criar em', noClassItems: 'Nenhum item.',
     emptyTitle: 'Busque qualquer item do jogo', emptySub: 'Em português ou inglês. Mostro a árvore inteira de criação, quantidades e o que você já tem.',
     missingTitle: 'Falta coletar', stepsTitle: 'Etapas de criação', sourcesTitle: 'Considerar itens de', filterPh: 'Filtrar...',
     howTo: 'Como obter', usedIn: 'Usado em', noSources: 'Sem fonte conhecida (pode vir de eventos, NPCs ou recompensas especiais).',
@@ -23,7 +23,7 @@ const I18N = {
       BP_Consumables_RecipeUnlocker2_C: 'Receita', TrinketItemData: 'Bugiganga', FuelItemData: 'Combustível', ItemData: 'Material' },
   },
   en: {
-    title: 'Crafting Codex', searchPh: 'Search item (English or Portuguese)...', tabCraft: 'Crafting', tabInv: 'Inventory',
+    title: 'Crafting Codex', searchPh: 'Search item (English or Portuguese)...', tabCraft: 'Crafting', tabInv: 'Inventory', tabClasses: 'Classes', haveOnly: 'Only what I have', items: 'items', craftAt: 'Craft at', noClassItems: 'No items.',
     emptyTitle: 'Search any item in the game', emptySub: 'In English or Portuguese. Shows the whole crafting tree, quantities and what you already have.',
     missingTitle: 'Still to gather', stepsTitle: 'Crafting steps', sourcesTitle: 'Count items from', filterPh: 'Filter...',
     howTo: 'How to get', usedIn: 'Used in', noSources: 'No known source (may come from events, NPCs or special rewards).',
@@ -56,7 +56,9 @@ const S = {
   target: LS.get('target', null),
   qty: LS.get('qty', 1),
   choice: LS.get('choice', {}),
-  howtoOpen: LS.get('howtoOpen', true),          // itemId -> recipeId | 'gather'
+  howtoOpen: LS.get('howtoOpen', true),
+  cls: LS.get('cls', 'magic'),
+  catClosed: new Set(),          // itemId -> recipeId | 'gather'
   kindsOff: new Set(LS.get('kindsOff', ['world'])),
   closed: new Set(),
   pool: new Map(),
@@ -278,6 +280,7 @@ function render() {
   renderSources();
   renderCraft();
   if (!$('#view-inv').hidden) renderInventory();
+  if (!$('#view-classes').hidden) renderClasses();
 }
 
 function renderCraft() {
@@ -528,9 +531,55 @@ function selectTarget(id) {
 
 function showTab(tab) {
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  $('#view-craft').hidden = tab !== 'craft';
-  $('#view-inv').hidden = tab !== 'inv';
+  for (const v of ['craft', 'classes', 'inv']) $('#view-' + v).hidden = tab !== v;
   if (tab === 'inv') renderInventory();
+  if (tab === 'classes') renderClasses();
+  LS.set('tab', tab);
+}
+
+// ------------------------------------------------------------------ classes tab
+const CLASS_ORDER = ['magic', 'ranged', 'melee', 'general', 'tools'];
+const CLASS_ICON = { magic: '🔮', ranged: '🏹', melee: '⚔', general: '🧭', tools: '⛏' };
+const CAT_ORDER = ['staff', 'wand', 'runes', 'shortbow', 'longbow', 'crossbow', 'arrows', 'bolts', 'throwable', 'onehand', 'twohand', 'shield',
+  'masterwork', 'head', 'body', 'legs', 'ring', 'amulet', 'trinket', 'cape', 'backpack', 'special', 'pickaxe', 'axe', 'shovel', 'fishing', 'tool'];
+
+function renderClasses() {
+  if (!S.db?.classes) { $('#classGrid').innerHTML = `<div class="empty-note">${esc(t('noClassItems'))}</div>`; return; }
+  const cls = S.cls || 'magic';
+  const all = Object.values(S.db.items).filter(it => it.role);
+  $('#classPicker').innerHTML = CLASS_ORDER.filter(c => S.db.classes[c]).map(c => {
+    const n = all.filter(it => it.role.cls === c).length;
+    return `<button class="class-btn ${c === cls ? 'on' : ''}" data-cls="${c}"><span class="ci">${CLASS_ICON[c] || ''}</span>${esc(S.db.classes[c][S.lang])}<span class="cn">${n}</span></button>`;
+  }).join('');
+  const f = norm($('#classFilter').value);
+  const haveOnly = $('#classHaveOnly').checked;
+  const list = all.filter(it => it.role.cls === cls
+    && (!f || norm(it.name.pt + ' ' + it.name.en).includes(f))
+    && (!haveOnly || haveOf(it.id) > 0));
+  const byCat = new Map();
+  for (const it of list) (byCat.get(it.role.cat) || byCat.set(it.role.cat, []).get(it.role.cat)).push(it);
+  const cats = [...byCat.keys()].sort((a, b) => CAT_ORDER.indexOf(a) - CAT_ORDER.indexOf(b));
+  $('#classGrid').innerHTML = cats.length ? cats.map(cat => {
+    const items = byCat.get(cat).sort((a, b) => (a.role.tier || 99) - (b.role.tier || 99) || nm(a).localeCompare(nm(b)));
+    const closed = S.catClosed.has(cls + ':' + cat);
+    const cards = closed ? '' : `<div class="class-cards">${items.map(it => {
+      const have = haveOf(it.id);
+      const r = chosenRecipe(it.id);
+      const where = r ? (r.stations[0] ? `${t('craftAt')} ${S.db.stations[r.stations[0]]?.name[S.lang] || ''}` : '') : srcHint(it, 1);
+      const locked = r && !isUnlocked(r);
+      return `<div class="class-card ${have ? 'owned' : ''}" data-goto="${esc(it.id)}">
+        ${slot(it, '', have ? fmt(have) : null)}
+        <div class="cc-main">
+          <div class="cc-name">${esc(nm(it))}</div>
+          <div class="cc-sub">${it.role.tier ? `<span class="tier">T${it.role.tier}</span>` : ''}${locked ? '🔒 ' : ''}${esc(where)}</div>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+    return `<section class="class-cat">
+      <button class="class-cat-head" data-cat="${esc(cls + ':' + cat)}">${closed ? '▸' : '▾'} ${esc(S.db.categories[cat]?.[S.lang] || cat)} <span class="muted">${items.length}</span></button>
+      ${cards}
+    </section>`;
+  }).join('') : `<div class="empty-note">${esc(t('noClassItems'))}</div>`;
 }
 
 // ------------------------------------------------------------------ tooltip
@@ -591,6 +640,7 @@ async function init() {
 document.addEventListener('input', (e) => {
   if (e.target.id === 'search') { resultSel = 0; renderResults(); }
   if (e.target.id === 'invFilter') renderInventory();
+  if (e.target.id === 'classFilter') renderClasses();
   if (e.target.id === 'qty') {
     const v = Math.max(1, Math.min(99999, parseInt(e.target.value, 10) || 1));
     S.qty = v; LS.set('qty', v);
@@ -610,6 +660,7 @@ document.addEventListener('change', (e) => {
     rebuildPool(); render();
   }
   if (el.id === 'worldPick') { LS.set('world', el.value); loadState(); }
+  if (el.id === 'classHaveOnly') renderClasses();
 });
 
 document.addEventListener('click', (e) => {
@@ -619,6 +670,10 @@ document.addEventListener('click', (e) => {
   if (q) { S.qty = Math.max(1, S.qty + Number(q.dataset.q)); LS.set('qty', S.qty); return renderCraft(); }
   const tg = e.target.closest('.toggle:not(.leaf)');
   if (tg) { const k = tg.dataset.key; S.closed.has(k) ? S.closed.delete(k) : S.closed.add(k); return renderCraft(); }
+  const cb = e.target.closest('[data-cls]');
+  if (cb) { S.cls = cb.dataset.cls; LS.set('cls', S.cls); return renderClasses(); }
+  const ch = e.target.closest('[data-cat]');
+  if (ch) { const k = ch.dataset.cat; S.catClosed.has(k) ? S.catClosed.delete(k) : S.catClosed.add(k); return renderClasses(); }
   if (e.target.closest('[data-howto-toggle]')) { S.howtoOpen = !(S.howtoOpen ?? true); LS.set('howtoOpen', S.howtoOpen); return renderHowTo(S.db.items[S.target]); }
   if (e.target.closest('[data-howto-all]')) { S.howtoAll = true; return renderHowTo(S.db.items[S.target]); }
   if (e.target.closest('[data-used-all]')) { S.usedAll = true; return renderHowTo(S.db.items[S.target]); }

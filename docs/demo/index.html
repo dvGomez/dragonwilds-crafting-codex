@@ -33,6 +33,7 @@
       </div>
       <nav class="tabs">
         <button class="tab active" data-tab="craft" data-i18n="tabCraft">Criação</button>
+        <button class="tab" data-tab="classes" data-i18n="tabClasses">Classes</button>
         <button class="tab" data-tab="inv" data-i18n="tabInv">Inventário</button>
       </nav>
     </div>
@@ -62,6 +63,19 @@
           <div id="sources" class="sources"></div>
         </section>
       </aside>
+    </main>
+
+    <main id="view-classes" class="view" hidden>
+      <section class="panel classes-panel">
+        <div class="classes-head">
+          <div class="class-picker" id="classPicker"></div>
+          <div class="classes-tools">
+            <input id="classFilter" type="search" data-i18n-ph="filterPh" placeholder="Filtrar...">
+            <label class="src"><input type="checkbox" id="classHaveOnly"> <span data-i18n="haveOnly">Só o que tenho</span></label>
+          </div>
+        </div>
+        <div id="classGrid" class="class-grid"></div>
+      </section>
     </main>
 
     <main id="view-inv" class="view" hidden>

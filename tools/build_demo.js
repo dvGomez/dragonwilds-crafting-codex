@@ -47,7 +47,7 @@ for (const id of keep) {
 const usedStations = new Set(Object.values(recipes).flatMap(r => r.stations));
 const stations = Object.fromEntries(Object.entries(db.stations).filter(([k]) => usedStations.has(k)).map(([k, v]) => [k, { ...v }]));
 const guidToItem = Object.fromEntries(Object.entries(db.guidToItem).filter(([, v]) => keep.has(v)));
-const demoDb = { actorToItem: {}, items, recipes, stations, guidToItem };
+const demoDb = { actorToItem: {}, items, recipes, stations, guidToItem, classes: db.classes, categories: db.categories };
 
 // 3) sample inventory
 const sources = { inventory: [], storage: [] };

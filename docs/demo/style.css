@@ -238,6 +238,35 @@ h2 { margin: 2px 0 10px; font: 400 17px "Bona Nova SC", serif; color: var(--gold
 .tt-src { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
 @media (max-width: 700px) { .howto-group { grid-template-columns: 1fr; gap: 4px; } }
 
+/* ------------------------------------------------------------------ classes tab */
+#view-classes { grid-template-columns: 1fr; }
+.classes-panel { padding: 12px 14px 18px; }
+.classes-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.class-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+.class-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
+  background: linear-gradient(180deg, #221b12, #120e09); border: 1px solid var(--line-2); border-radius: 3px;
+  color: var(--text); font: 16px "Bona Nova SC", serif; letter-spacing: 0.04em;
+}
+.class-btn .ci { font-size: 16px; }
+.class-btn .cn { font: 12px "Noto Sans", sans-serif; color: var(--muted); }
+.class-btn:hover { border-color: var(--gold-dim); }
+.class-btn.on { border-color: var(--gold); color: var(--gold-2); box-shadow: 0 0 14px rgba(214, 179, 106, 0.2); background: linear-gradient(180deg, #3a2c16, #1a130b); }
+.classes-tools { display: flex; gap: 12px; align-items: center; }
+.classes-tools input[type=search] { height: 34px; padding: 0 12px; background: rgba(0, 0, 0, 0.55); border: 1px solid var(--line-2); border-radius: 3px; color: var(--text); font: 14px "Noto Sans", sans-serif; width: 220px; }
+.class-cat { margin-top: 6px; }
+.class-cat-head { background: none; border: 0; padding: 8px 0 6px; color: var(--gold); font: 17px "Bona Nova SC", serif; letter-spacing: 0.05em; width: 100%; text-align: left;
+  border-bottom: 1px solid; border-image: linear-gradient(90deg, var(--line-2), transparent) 1; }
+.class-cat-head:hover { color: var(--gold-2); }
+.class-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; padding: 8px 0 4px; }
+.class-card { display: flex; gap: 10px; align-items: center; padding: 4px 8px 4px 4px; border: 1px solid transparent; border-radius: 3px; cursor: pointer; }
+.class-card:hover { border-color: var(--line-2); background: rgba(214, 179, 106, 0.06); }
+.class-card.owned .cc-name { color: var(--ok); }
+.cc-main { min-width: 0; }
+.cc-name { font-weight: 600; font-size: 13px; line-height: 1.25; }
+.cc-sub { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tier { display: inline-block; font: 600 10px "Noto Sans", sans-serif; color: var(--gold); border: 1px solid var(--gold-dim); border-radius: 2px; padding: 0 4px; margin-right: 5px; }
+
 /* ---- web demo: no game art, CSS stand-ins ---- */
 body.browser { background: radial-gradient(ellipse at 50% 0%, #1d160c, #050403 70%); }
 .frame {

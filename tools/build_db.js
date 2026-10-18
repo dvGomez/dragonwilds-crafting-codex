@@ -87,6 +87,7 @@ for (const a of assets) {
     weight: p.Weight ?? null,
     type: t,
     cat: (p.Category || {}).TagName ?? null,
+    tags: [...new Set([...(p.__Tags || []), ...(p.ItemFilterTags || []), (p.Category || {}).TagName].filter(x => x && /^(ItemFilter\.Type\.Equipment|DamageType)/.test(x)))],
     junk: JUNK.test(a.__path),
   };
 }
@@ -116,6 +117,7 @@ for (const a of piecesRaw) {
 const KIND = { DT_CraftingStationsDataTable: 'craft', DT_ProcessingStationDataTable: 'process', DT_VendorDataTable: 'vendor' };
 const stations = {};
 const recipeStations = {};
+const recipeLabel = {}; // recipe -> crafting-bench tab label ("Staves", "Shortbows"...)
 for (const [tname, kind] of Object.entries(KIND)) {
   for (const [row, data] of Object.entries(tables[tname].Rows)) {
     if (row.startsWith('Test') || row === 'OnlyCatalyst') continue;
@@ -126,7 +128,13 @@ for (const [tname, kind] of Object.entries(KIND)) {
     if (!name) name = { en: row, pt: row };
     stations[sid] = { id: sid, kind, name, icon: piece ? icon((piece.Properties || {}).DisplayIcon) : null };
     const refs = (data.Recipes || []).map(r => r.ObjectPath);
-    for (const lab of data.LabeledRecipes || []) refs.push(...(lab.Collection || []).map(r => r.AssetPathName));
+    for (const lab of data.LabeledRecipes || []) {
+      const label = text(lab.Label);
+      for (const r of lab.Collection || []) {
+        refs.push(r.AssetPathName);
+        if (label && kind === 'craft' && !recipeLabel[pkg(r.AssetPathName)]) recipeLabel[pkg(r.AssetPathName)] = label;
+      }
+    }
     for (const r of refs) {
       const list = (recipeStations[pkg(r)] ||= []);
       if (!list.includes(sid)) list.push(sid);
@@ -229,12 +237,103 @@ for (const r of Object.values(recipes)) {
   }
 }
 
+// ---- combat class + category for equipment ("Classes" tab)
+const L = (en, pt) => ({ en, pt });
+const CATEGORIES = {
+  staff: L('Staves', 'Cajados'), wand: L('Wands', 'Varinhas'), runes: L('Runes', 'Runas'),
+  shortbow: L('Shortbows', 'Arcos Curtos'), longbow: L('Longbows', 'Arcos Longos'), crossbow: L('Crossbows', 'Balestras'),
+  arrows: L('Arrows', 'Flechas'), bolts: L('Bolts', 'Setas'),
+  onehand: L('One-handed weapons', 'Armas de Uma Mão'), twohand: L('Two-handed weapons', 'Armas de Duas Mãos'), shield: L('Shields', 'Escudos'),
+  head: L('Head', 'Cabeça'), body: L('Body', 'Corpo'), legs: L('Legs', 'Pernas'),
+  throwable: L('Throwables', 'Arremessáveis'), masterwork: L('Masterworks', 'Magistrais'), ring: L('Rings', 'Anéis'), amulet: L('Amulets', 'Amuletos'), trinket: L('Trinkets', 'Bugigangas'),
+  cape: L('Capes', 'Capas'), backpack: L('Backpacks', 'Mochilas'), special: L('Special', 'Especiais'),
+  pickaxe: L('Pickaxes', 'Picaretas'), axe: L('Logging axes', 'Machados de Lenha'), shovel: L('Shovels', 'Pás'), fishing: L('Fishing', 'Pesca'), tool: L('Other tools', 'Outras ferramentas'),
+};
+const CLASSES = { magic: L('Mage', 'Mago'), ranged: L('Ranger', 'Arqueiro'), melee: L('Warrior', 'Guerreiro'), general: L('General', 'Geral'), tools: L('Tools', 'Ferramentas') };
+const EQUIP = new Set(['WearableEquipmentData', 'HeldEquipmentData', 'ShieldData', 'RangedAmmoData', 'MagicAmmoData', 'TrinketItemData', 'JewelleryData', 'EquipmentData',
+  'HarvestToolEquipmentData', 'SpadeToolEquipmentData', 'FishingRodHeldEquipmentData', 'FishingBaitAmmoData']);
+const MATERIALS = ['stone', 'bone', 'wood', 'ash', 'copper', 'bronze', 'oak', 'iron', 'willow', 'steel', 'maple', 'mithril', 'yew', 'adamant', 'magic', 'runite', 'rune', 'dragon'];
+const LABEL_CAT = [[/Stave/i, 'staff'], [/^Bows$/i, 'shortbow'], [/Wand/i, 'wand'], [/Shortbow/i, 'shortbow'], [/Longbow/i, 'longbow'], [/Crossbow/i, 'crossbow'], [/Arrow/i, 'arrows'],
+  [/Bolt/i, 'bolts'], [/^Runes$/i, 'runes'], [/One Handed/i, 'onehand'], [/Two Handed/i, 'twohand'], [/Shield/i, 'shield'], [/^Rings$/i, 'ring'], [/Amulet/i, 'amulet'],
+  [/Masterwork/i, 'masterwork'], [/Cape/i, 'cape'], [/Backpack/i, 'backpack'], [/Head/i, 'head'], [/Body/i, 'body'], [/Leg/i, 'legs']];
+
+// official tier per recipe: DT_Progression_* rows are named "T6_..." and list the recipes they unlock
+const recipeTier = {};
+for (const [tname, t] of Object.entries(tables)) {
+  if (!/Progression/.test(tname)) continue;
+  for (const [row, data] of Object.entries(t.Rows || {})) {
+    const m = row.match(/^T(\d+)_/);
+    if (!m) continue;
+    for (const ref of JSON.stringify(data).match(/\/[A-Za-z0-9_/]+\/(RECIPE_|DA_Recipe)[A-Za-z0-9_]+/g) || []) {
+      if (recipeTier[ref] == null || +m[1] < recipeTier[ref]) recipeTier[ref] = +m[1];
+    }
+  }
+}
+
+function classify(it) {
+  if (!EQUIP.has(it.type) || it.junk) return null;
+  const tags = it.tags || [];
+  const has = (t) => tags.some(x => x.startsWith(t));
+  const id = it.id.split('/').pop();
+  const craft = (it.recipes || []).map(r => recipes[r]).find(r => r && !r.junk && recipeLabel[r.id]);
+  const label = craft ? recipeLabel[craft.id].en : '';
+  // category: crafting-bench tab first, then tags / asset name
+  let cat = (LABEL_CAT.find(([re]) => re.test(label)) || [])[1];
+  if (!cat) {
+    if (has('ItemFilter.Type.Equipment.Tool.Pickaxe')) cat = 'pickaxe';
+    else if (has('ItemFilter.Type.Equipment.Tool.LoggingAxe')) cat = 'axe';
+    else if (has('ItemFilter.Type.Equipment.Tool.Shovel')) cat = 'shovel';
+    else if (has('ItemFilter.Type.Equipment.Tool.Fishing')) cat = 'fishing';
+    else if (has('ItemFilter.Type.Equipment.Tool') || /Spade|Bucket|WateringCan|Torch|Secateurs/i.test(id)) cat = 'tool';
+    else if (has('ItemFilter.Type.Equipment.Ammo.Rune')) cat = 'runes';
+    else if (has('ItemFilter.Type.Equipment.Ammo.Arrow')) cat = 'arrows';
+    else if (has('ItemFilter.Type.Equipment.Ammo.Bolt')) cat = 'bolts';
+    else if (has('ItemFilter.Type.Equipment.Shield')) cat = 'shield';
+    else if (has('ItemFilter.Type.Equipment.Cape') || /Cape/i.test(id)) cat = 'cape';
+    else if (has('ItemFilter.Type.Equipment.Weapon.Magic')) cat = /Wand/i.test(id) ? 'wand' : 'staff';
+    else if (has('ItemFilter.Type.Equipment.Weapon.Ranged')) cat = /Crossbow/i.test(id) ? 'crossbow' : /Longbow/i.test(id) ? 'longbow' : /Bow/i.test(id) ? 'shortbow' : 'throwable';
+    else if (has('ItemFilter.Type.Equipment.Weapon.Melee')) cat = /Great|Maul|Battle|Hammer|Halberd|2H|TwoHand|Scythe/i.test(id) ? 'twohand' : 'onehand';
+    else if (/Head|Helm|Hat|Hood|Mask|Coif/i.test(id)) cat = 'head';
+    else if (/Body|Chest|Robe|Top|Platebody|Torso/i.test(id)) cat = 'body';
+    else if (/Legs|Pants|Skirt|Chaps/i.test(id)) cat = 'legs';
+    else if (/Ring/i.test(id)) cat = 'ring';
+    else if (/Amulet|Necklace|Pendant/i.test(id)) cat = 'amulet';
+    else if (it.type === 'TrinketItemData' || it.type === 'JewelleryData') cat = 'trinket';
+    else if (has('ItemFilter.Type.Equipment.Armour')) cat = 'special';
+    else return null;
+  }
+  // class
+  let cls = null;
+  if (['pickaxe', 'axe', 'shovel', 'fishing', 'tool'].includes(cat)) cls = 'tools';
+  else if (has('ItemFilter.Type.Equipment.Armour.Light') || has('ItemFilter.Type.Equipment.Weapon.Magic') || has('ItemFilter.Type.Equipment.Ammo.Rune') || /^Magic /.test(label) || ['staff', 'wand', 'runes'].includes(cat)) cls = 'magic';
+  else if (has('ItemFilter.Type.Equipment.Armour.Medium') || has('ItemFilter.Type.Equipment.Weapon.Ranged') || has('ItemFilter.Type.Equipment.Ammo.Arrow') || has('ItemFilter.Type.Equipment.Ammo.Bolt') || /^Ranged /.test(label) || ['shortbow', 'longbow', 'crossbow', 'arrows', 'bolts'].includes(cat)) cls = 'ranged';
+  else if (has('ItemFilter.Type.Equipment.Armour.Heavy') || has('ItemFilter.Type.Equipment.Weapon.Melee') || has('ItemFilter.Type.Equipment.Shield') || /^Melee /.test(label) || ['onehand', 'twohand', 'shield'].includes(cat)) cls = 'melee';
+  else {
+    const n = `${id} ${it.name.en}`;
+    cls = /Magic|Mage|Wizard|Arcan|Sorcer|Rune\b/i.test(n) ? 'magic' : /Ranged|Ranger|Archer|Bow|Hunter/i.test(n) ? 'ranged'
+      : /Attack|Melee|Strength|Warrior|Defen|Fighter|Berserk/i.test(n) ? 'melee' : 'general';
+  }
+  // generic bench tabs ("One Handed Weapons" on the Crafting Table) -> class-specific category
+  if (cat === 'shortbow' && /Longbow/i.test(id)) cat = 'longbow';
+  if (cls === 'magic' && (cat === 'onehand' || cat === 'twohand')) cat = /Wand/i.test(id) ? 'wand' : 'staff';
+  if (cls === 'ranged' && (cat === 'onehand' || cat === 'twohand')) cat = /Bow/i.test(id) ? 'shortbow' : 'throwable';
+  const tiers = (it.recipes || []).map(r => recipeTier[r]).filter(x => x != null);
+  const tm = id.match(/_T(\d+)_/i);
+  const mat = cat === 'runes' ? -1 : MATERIALS.findIndex(m => new RegExp(`(^|_)${m}(_|$)`, 'i').test(id));
+  const tier = tiers.length ? Math.min(...tiers) : tm ? +tm[1] : mat >= 0 ? Math.round(mat / 2) : 0;
+  return { cls, cat, tier };
+}
+for (const it of Object.values(items)) {
+  const role = classify(it);
+  if (role) it.role = role;
+}
+
 const guidToItem = {};
 for (const [k, v] of Object.entries(items)) if (v.guid) guidToItem[v.guid] = k;
 
 // ------------------------------------------------------------------ write
 fs.mkdirSync(path.join(OUT, 'icons'), { recursive: true });
-fs.writeFileSync(path.join(OUT, 'db.json'), JSON.stringify({ actorToItem, items, recipes, stations, guidToItem }));
+fs.writeFileSync(path.join(OUT, 'db.json'), JSON.stringify({ actorToItem, items, recipes, stations, guidToItem, classes: CLASSES, categories: CATEGORIES }));
 for (const n of usedIcons) {
   const dst = path.join(OUT, 'icons', n + '.png');
   if (!fs.existsSync(dst)) fs.copyFileSync(path.join(iconDir, n + '.png'), dst);

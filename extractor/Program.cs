@@ -239,6 +239,9 @@ static void RawFallback(DefaultFileProvider provider, CUE4Parse.UE4.Assets.IPack
         }
         if (found != null) props["Name"] = found;
     }
+    // gameplay tags used by the item (filter category, armour weight, damage type...) straight from the name map
+    var tags = names.Where(n => n.StartsWith("ItemFilter.") || n.StartsWith("DamageType.") || n.StartsWith("Equipment.")).Distinct().ToList();
+    if (tags.Count > 0) props["__Tags"] = new JArray(tags);
     if (props["Icon"] == null)
     {
         var icon = names.FirstOrDefault(n => n.StartsWith("/") && n.Split('/').Last().StartsWith("T_Icon", StringComparison.OrdinalIgnoreCase) && !n.Contains("Counter"))
