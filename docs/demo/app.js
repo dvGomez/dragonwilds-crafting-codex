@@ -6,7 +6,7 @@ const I18N = {
     title: 'Códex de Criação', searchPh: 'Buscar item (português ou inglês)...', tabCraft: 'Criação', tabInv: 'Inventário', tabClasses: 'Classes', haveOnly: 'Só o que tenho', items: 'itens', craftAt: 'Criar em', noClassItems: 'Nenhum item.',
     emptyTitle: 'Busque qualquer item do jogo', emptySub: 'Em português ou inglês. Mostro a árvore inteira de criação, quantidades e o que você já tem.',
     missingTitle: 'Falta coletar', stepsTitle: 'Etapas de criação', sourcesTitle: 'Considerar itens de', filterPh: 'Filtrar...',
-    howTo: 'Como obter', usedIn: 'Usado em', noSources: 'Sem fonte conhecida (pode vir de eventos, NPCs ou recompensas especiais).',
+    howTo: 'Como obter', usedIn: 'Usado em', haveIn: 'Você tem em', haveNone: 'Você não tem nenhum (na bolsa, equipado ou nos baús carregados).', notCounted: 'Não está sendo considerado (desmarcado em "Considerar itens de")', noSources: 'Sem fonte conhecida (pode vir de eventos, NPCs ou recompensas especiais).',
     live: 'Sessão ao vivo', demo: 'Demonstração · inventário de exemplo',
     srcNoteDemo: 'Demonstração com alguns itens e um inventário fictício. Instale o Códex para usar todos os itens do jogo com o seu inventário de verdade.', liveNoPlayer: 'Jogo aberto (no menu)', saveMode: 'Save', ago: 'há', noData: 'Nenhum dado do jogo encontrado',
     have: 'tem', need: 'precisa', missing: 'faltam', craft: 'criar', crafts: 'criações', ready: 'Você já tem tudo para criar!',
@@ -26,7 +26,7 @@ const I18N = {
     title: 'Crafting Codex', searchPh: 'Search item (English or Portuguese)...', tabCraft: 'Crafting', tabInv: 'Inventory', tabClasses: 'Classes', haveOnly: 'Only what I have', items: 'items', craftAt: 'Craft at', noClassItems: 'No items.',
     emptyTitle: 'Search any item in the game', emptySub: 'In English or Portuguese. Shows the whole crafting tree, quantities and what you already have.',
     missingTitle: 'Still to gather', stepsTitle: 'Crafting steps', sourcesTitle: 'Count items from', filterPh: 'Filter...',
-    howTo: 'How to get', usedIn: 'Used in', noSources: 'No known source (may come from events, NPCs or special rewards).',
+    howTo: 'How to get', usedIn: 'Used in', haveIn: 'You have it in', haveNone: 'You have none (in your bag, equipped or in loaded chests).', notCounted: 'Not counted (unchecked in "Count items from")', noSources: 'No known source (may come from events, NPCs or special rewards).',
     live: 'Live session', demo: 'Demo · sample inventory',
     srcNoteDemo: 'Demo with a few items and a made-up inventory. Install the Codex to use every item in the game with your real inventory.', liveNoPlayer: 'Game open (in menu)', saveMode: 'Save', ago: '', noData: 'No game data found',
     have: 'have', need: 'need', missing: 'missing', craft: 'craft', crafts: 'crafts', ready: 'You have everything to craft it!',
@@ -160,6 +160,24 @@ function renderHowTo(item) {
         `<span class="howto-chip"><b>${esc(x.name)}</b>${x.detail ? ` <span class="muted">${esc(x.detail)}</span>` : ''}</span>`).join('')}
         ${g.list.length > 6 && !S.howtoAll ? `<button class="link-btn" data-howto-all>+${g.list.length - 6}</button>` : ''}</div>
     </div>`).join('');
+  // where the player has this item right now (bag, equipment, each chest/station)
+  const places = [];
+  for (const src of S.inv?.sources || []) {
+    const n = src.items.reduce((a, it) => a + (itemIdOf(it) === item.id ? it.count : 0), 0);
+    if (n) places.push({ src, n });
+  }
+  const KORDER = ['inventory', 'equipped', 'personal', 'storage', 'world'];
+  places.sort((a, b) => KORDER.indexOf(a.src.kind) - KORDER.indexOf(b.src.kind) || (a.src.dist || 0) - (b.src.dist || 0));
+  const total = places.reduce((a, p) => a + p.n, 0);
+  const haveHtml = places.length ? `
+    <div class="howto-group">
+      <div class="howto-kind have-kind">📦 ${esc(t('haveIn'))} <span class="muted">(${fmt(total)})</span></div>
+      <div class="howto-list">${places.map(p => `<span class="howto-chip have-chip ${S.kindsOff.has(p.src.kind) ? 'off' : ''}" title="${esc(S.kindsOff.has(p.src.kind) ? t('notCounted') : '')}"><b>${esc(containerName(p.src))}</b> <span class="have-n">${fmt(p.n)}</span></span>`).join('')}</div>
+    </div>` : `
+    <div class="howto-group">
+      <div class="howto-kind have-kind">📦 ${esc(t('haveIn'))}</div>
+      <div class="howto-list"><span class="muted" style="font-size:12px;padding-top:3px">${esc(t('haveNone'))}</span></div>
+    </div>`;
   const usedHtml = used.length ? `
     <div class="howto-group">
       <div class="howto-kind">🔁 ${esc(t('usedIn'))} <span class="muted">(${used.length}${used.length >= 60 ? '+' : ''})</span></div>
@@ -168,7 +186,7 @@ function renderHowTo(item) {
     </div>` : '';
   el.innerHTML = `
     <button class="howto-head" data-howto-toggle>${open ? '▾' : '▸'} ${esc(t('howTo'))}</button>
-    ${open ? `<div class="howto-body">${rows || `<div class="empty-note">${esc(t('noSources'))}</div>`}${usedHtml}</div>` : ''}`;
+    ${open ? `<div class="howto-body">${haveHtml}${rows || `<div class="empty-note">${esc(t('noSources'))}</div>`}${usedHtml}</div>` : ''}`;
 }
 
 // ------------------------------------------------------------------ inventory pool
@@ -438,7 +456,15 @@ function renderSources() {
 function containerName(src) {
   if (src.kind !== 'storage' && src.kind !== 'world') return t('k_' + src.kind);
   const it = src.item && S.db.items[src.item];
-  const base = it ? nm(it) : (src.cls || src.label || '?').replace(/^BP_/, '').replace(/_C$/, '').replace(/_/g, ' ');
+  const cls = src.cls || src.label || '?';
+  const tier = (cls.match(/Tier_?(\d+)/i) || [])[1];
+  const pt = S.lang === 'pt';
+  const worldName = /BuriedChest/i.test(cls) ? (pt ? 'Baú enterrado' : 'Buried chest')
+    : /LootChest/i.test(cls) ? (pt ? 'Baú de saque' : 'Loot chest')
+    : /Treasure_Chest|Dungeon/i.test(cls) ? (pt ? 'Baú de tesouro (masmorra)' : 'Dungeon treasure chest')
+    : null;
+  const base = it ? nm(it) : worldName ? `${worldName}${tier ? ' T' + tier : ''}`
+    : cls.replace(/^BP_/, '').replace(/_C$/, '').replace(/_/g, ' ');
   return src.dist ? `${base} · ${Math.round(src.dist)} m` : base;
 }
 
