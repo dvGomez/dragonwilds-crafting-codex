@@ -104,6 +104,27 @@ local function location(actor)
     return 0, 0, 0
 end
 
+-- name of the player that owns a controller / pawn / player state
+local function playerName(owner)
+    local ps = nil
+    if className(owner):find("PlayerState") then ps = owner
+    else pcall(function() ps = owner.PlayerState end) end
+    local name = nil
+    if valid(ps) then
+        pcall(function() name = ps:GetPlayerName():ToString() end)
+        if not name or name == "" then pcall(function() name = ps.PlayerNamePrivate:ToString() end) end
+    end
+    return name or "?"
+end
+
+-- the pawn to measure distance from (controllers sit at the origin)
+local function bodyOf(owner)
+    local pawn = nil
+    pcall(function() pawn = owner.Pawn end)
+    if valid(pawn) then return pawn end
+    return owner
+end
+
 local function snapshot()
     local me = localPawn()
     local px, py, pz = 0, 0, 0
@@ -118,23 +139,25 @@ local function snapshot()
                 if addr and not seen[addr] then
                     seen[addr] = true
                     local okOwner, owner = pcall(function() return comp:GetOwner() end)
-                    local who = "other"
+                    local who = nil
                     if okOwner and valid(owner) then who = playerOwnership(owner, me) end
-                    if who ~= "other" then
+                    if okOwner and valid(owner) then
                         local items = readItems(comp)
                         if #items > 0 then
                             local compCls = className(comp)
-                            local kind, dist = "world", 0
+                            local kind, dist, pname = "world", 0, nil
                             if who == "mine" then
                                 kind = compCls:find("Loadout") and "equipped" or (compCls:find("Personal") and "personal" or "inventory")
                             else
-                                local x, y, z = location(owner)
+                                -- other players' bags/equipment only exist here when this game is the host
+                                if who == "other" then kind, pname = "player", playerName(owner) end
+                                local x, y, z = location(who == "other" and bodyOf(owner) or owner)
                                 dist = math.sqrt((x - px) ^ 2 + (y - py) ^ 2 + (z - pz) ^ 2) / 100 -- metres
                             end
                             sources[#sources + 1] = string.format(
-                                '{"id":%s,"kind":%s,"cls":%s,"comp":%s,"dist":%.1f,"items":[%s]}',
+                                '{"id":%s,"kind":%s,"cls":%s,"comp":%s,"dist":%.1f,"player":%s,"items":[%s]}',
                                 jsonStr(string.format("%x", addr)), jsonStr(kind), jsonStr(className(owner)), jsonStr(compCls), dist,
-                                table.concat(items, ","))
+                                pname and jsonStr(pname) or "null", table.concat(items, ","))
                         end
                     end
                 end

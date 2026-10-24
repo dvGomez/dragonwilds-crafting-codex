@@ -6,15 +6,15 @@ const I18N = {
     title: 'Códex de Criação', searchPh: 'Buscar item (português ou inglês)...', tabCraft: 'Criação', tabInv: 'Inventário', tabClasses: 'Classes', haveOnly: 'Só o que tenho', items: 'itens', craftAt: 'Criar em', noClassItems: 'Nenhum item.',
     emptyTitle: 'Busque qualquer item do jogo', emptySub: 'Em português ou inglês. Mostro a árvore inteira de criação, quantidades e o que você já tem.',
     missingTitle: 'Falta coletar', stepsTitle: 'Etapas de criação', sourcesTitle: 'Considerar itens de', filterPh: 'Filtrar...',
-    howTo: 'Como obter', usedIn: 'Usado em', haveIn: 'Você tem em', haveNone: 'Você não tem nenhum (na bolsa, equipado ou nos baús carregados).', notCounted: 'Não está sendo considerado (desmarcado em "Considerar itens de")', noSources: 'Sem fonte conhecida (pode vir de eventos, NPCs ou recompensas especiais).',
+    howTo: 'Como obter', usedIn: 'Usado em', haveIn: 'Você tem em', hostOnly: 'só quando você é o anfitrião', haveNone: 'Você não tem nenhum (na bolsa, equipado ou nos baús carregados).', notCounted: 'Não está sendo considerado (desmarcado em "Considerar itens de")', noSources: 'Sem fonte conhecida (pode vir de eventos, NPCs ou recompensas especiais).',
     live: 'Sessão ao vivo', demo: 'Demonstração · inventário de exemplo',
     srcNoteDemo: 'Demonstração com alguns itens e um inventário fictício. Instale o Códex para usar todos os itens do jogo com o seu inventário de verdade.', liveNoPlayer: 'Jogo aberto (no menu)', saveMode: 'Save', ago: 'há', noData: 'Nenhum dado do jogo encontrado',
     have: 'tem', need: 'precisa', missing: 'faltam', craft: 'criar', crafts: 'criações', ready: 'Você já tem tudo para criar!',
     canCraftNow: 'Pode criar agora', notReady: 'Ainda faltam materiais', allCollected: 'Nada para coletar, você já tem tudo.',
     noSteps: 'Nenhuma etapa necessária.', youHave: 'Você tem', inBag: 'na bolsa', makes: 'faz', perCraft: 'por criação',
     gather: 'Coletar / obter', buy: 'Comprar', recipe: 'Receita', locked: 'não aprendida', cycle: 'ciclo, ignorado',
-    k_inventory: 'Bolsa', k_equipped: 'Equipado', k_personal: 'Baú pessoal', k_storage: 'Baús e estações construídos', k_world: 'Baús do mundo / NPCs',
-    srcNoteLive: 'Itens lidos ao vivo da sessão atual (seu mundo ou de um amigo). Baús distantes podem não estar carregados.',
+    k_inventory: 'Bolsa', k_equipped: 'Equipado', k_personal: 'Baú pessoal', k_player: 'Outros jogadores', k_storage: 'Baús e estações construídos', k_world: 'Baús do mundo / NPCs',
+    srcNoteLive: 'Itens lidos ao vivo da sessão atual (seu mundo ou de um amigo). Baús distantes podem não estar carregados. A bolsa de outros jogadores só aparece quando você é o anfitrião do mundo.',
     srcNoteSave: 'Mod ao vivo não detectado: usando o último save em disco do seu mundo. Para sessões de amigos, instale o mod CraftCodex.',
     noResults: 'Nada encontrado', total: 'itens', containers: 'recipientes', from: 'de', build: 'Construção', surplus: 'sobra',
     types: { Building: 'Construção', WearableEquipmentData: 'Armadura', HeldEquipmentData: 'Ferramenta / Arma', ShieldData: 'Escudo',
@@ -26,15 +26,15 @@ const I18N = {
     title: 'Crafting Codex', searchPh: 'Search item (English or Portuguese)...', tabCraft: 'Crafting', tabInv: 'Inventory', tabClasses: 'Classes', haveOnly: 'Only what I have', items: 'items', craftAt: 'Craft at', noClassItems: 'No items.',
     emptyTitle: 'Search any item in the game', emptySub: 'In English or Portuguese. Shows the whole crafting tree, quantities and what you already have.',
     missingTitle: 'Still to gather', stepsTitle: 'Crafting steps', sourcesTitle: 'Count items from', filterPh: 'Filter...',
-    howTo: 'How to get', usedIn: 'Used in', haveIn: 'You have it in', haveNone: 'You have none (in your bag, equipped or in loaded chests).', notCounted: 'Not counted (unchecked in "Count items from")', noSources: 'No known source (may come from events, NPCs or special rewards).',
+    howTo: 'How to get', usedIn: 'Used in', haveIn: 'You have it in', hostOnly: 'only when you are the host', haveNone: 'You have none (in your bag, equipped or in loaded chests).', notCounted: 'Not counted (unchecked in "Count items from")', noSources: 'No known source (may come from events, NPCs or special rewards).',
     live: 'Live session', demo: 'Demo · sample inventory',
     srcNoteDemo: 'Demo with a few items and a made-up inventory. Install the Codex to use every item in the game with your real inventory.', liveNoPlayer: 'Game open (in menu)', saveMode: 'Save', ago: '', noData: 'No game data found',
     have: 'have', need: 'need', missing: 'missing', craft: 'craft', crafts: 'crafts', ready: 'You have everything to craft it!',
     canCraftNow: 'Ready to craft', notReady: 'Materials still missing', allCollected: 'Nothing to gather, you have it all.',
     noSteps: 'No steps needed.', youHave: 'You have', inBag: 'in bag', makes: 'makes', perCraft: 'per craft',
     gather: 'Gather / obtain', buy: 'Buy', recipe: 'Recipe', locked: 'not learned', cycle: 'cycle, skipped',
-    k_inventory: 'Backpack', k_equipped: 'Equipped', k_personal: 'Personal chest', k_storage: 'Built chests & stations', k_world: 'World chests / NPCs',
-    srcNoteLive: 'Items read live from the current session (your world or a friend\'s). Far away chests may not be loaded.',
+    k_inventory: 'Backpack', k_equipped: 'Equipped', k_personal: 'Personal chest', k_player: 'Other players', k_storage: 'Built chests & stations', k_world: 'World chests / NPCs',
+    srcNoteLive: 'Items read live from the current session (your world or a friend\'s). Far away chests may not be loaded. Other players\' bags only show up when you host the world.',
     srcNoteSave: 'Live mod not detected: using your world\'s last save on disk. For friends\' sessions install the CraftCodex mod.',
     noResults: 'Nothing found', total: 'items', containers: 'containers', from: 'from', build: 'Building', surplus: 'leftover',
     types: { Building: 'Building', WearableEquipmentData: 'Armour', HeldEquipmentData: 'Tool / Weapon', ShieldData: 'Shield',
@@ -166,7 +166,7 @@ function renderHowTo(item) {
     const n = src.items.reduce((a, it) => a + (itemIdOf(it) === item.id ? it.count : 0), 0);
     if (n) places.push({ src, n });
   }
-  const KORDER = ['inventory', 'equipped', 'personal', 'storage', 'world'];
+  const KORDER = ['inventory', 'equipped', 'personal', 'player', 'storage', 'world'];
   places.sort((a, b) => KORDER.indexOf(a.src.kind) - KORDER.indexOf(b.src.kind) || (a.src.dist || 0) - (b.src.dist || 0));
   const total = places.reduce((a, p) => a + p.n, 0);
   const haveHtml = places.length ? `
@@ -435,13 +435,15 @@ function renderSources() {
   const inv = S.inv;
   const el = $('#sources');
   if (!inv) { el.innerHTML = ''; return; }
-  const kinds = ['inventory', 'equipped', 'personal', 'storage', 'world'];
+  const kinds = ['inventory', 'equipped', 'personal', 'player', 'storage', 'world'];
   const rows = [];
   for (const k of kinds) {
     const srcs = inv.sources.filter(s => s.kind === k);
-    if (!srcs.length && k !== 'inventory' && k !== 'storage') continue;
+    if (!srcs.length && k !== 'inventory' && k !== 'storage' && k !== 'player') continue;
     const n = srcs.reduce((a, s) => a + s.items.reduce((b, i) => b + i.count, 0), 0);
-    const sub = k === 'storage' || k === 'world' ? ` <span class="muted">(${srcs.length} ${esc(t('containers'))})</span>` : '';
+    const players = [...new Set(srcs.map(s => s.player).filter(Boolean))];
+    const sub = k === 'storage' || k === 'world' ? ` <span class="muted">(${srcs.length} ${esc(t('containers'))})</span>`
+      : k === 'player' ? ` <span class="muted">(${players.length ? esc(players.join(', ')) : esc(t('hostOnly'))})</span>` : '';
     rows.push(`<label class="src"><input type="checkbox" data-kind="${k}" ${S.kindsOff.has(k) ? '' : 'checked'}>${esc(t('k_' + k))}${sub}<span class="src-n">${fmt(n)}</span></label>`);
   }
   if (inv.mode === 'save' && inv.worlds?.length > 1) {
@@ -454,6 +456,10 @@ function renderSources() {
 
 // ------------------------------------------------------------------ inventory tab
 function containerName(src) {
+  if (src.kind === 'player') {
+    const part = /Loadout/i.test(src.comp || '') ? t('k_equipped') : /Personal/i.test(src.comp || '') ? t('k_personal') : t('k_inventory');
+    return `${src.player || '?'} (${part.toLowerCase()})${src.dist ? ` · ${Math.round(src.dist)} m` : ''}`;
+  }
   if (src.kind !== 'storage' && src.kind !== 'world') return t('k_' + src.kind);
   const it = src.item && S.db.items[src.item];
   const cls = src.cls || src.label || '?';
@@ -475,7 +481,7 @@ function renderInventory() {
   let total = 0;
   const groups = inv.sources
     .filter(s => !S.kindsOff.has(s.kind))
-    .slice().sort((a, b) => ['inventory', 'equipped', 'personal', 'storage', 'world'].indexOf(a.kind) - ['inventory', 'equipped', 'personal', 'storage', 'world'].indexOf(b.kind) || (a.dist || 0) - (b.dist || 0))
+    .slice().sort((a, b) => ['inventory', 'equipped', 'personal', 'player', 'storage', 'world'].indexOf(a.kind) - ['inventory', 'equipped', 'personal', 'player', 'storage', 'world'].indexOf(b.kind) || (a.dist || 0) - (b.dist || 0))
     .map(src => {
       const merged = new Map();
       for (const it of src.items) {
